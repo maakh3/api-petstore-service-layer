@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"handlers"
 	"repository"
 	"services"
-	"handlers"
 )
 
 func main() {
@@ -22,8 +22,8 @@ func main() {
 	mux := http.NewServeMux()
 
 	// pet endpoints
-	mux.HandleFunc("PUT /pet", petHandler.UpdatePet)
 	mux.HandleFunc("POST /pet", petHandler.AddPet)
+	mux.HandleFunc("PUT /pet", petHandler.UpdatePet)
 	mux.HandleFunc("GET /pet/findByStatus", petHandler.FindPetByStatus)
 	mux.HandleFunc("GET /pet/findByTags", petHandler.FindPetByTags)
 	mux.HandleFunc("GET /pet/{petId}", petHandler.GetById)
