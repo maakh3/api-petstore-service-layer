@@ -3,25 +3,35 @@ package main
 import (
 	"fmt"
 	"net/http"
+
+	"repository"
+	"services"
+	"handlers"
 )
 
 func main() {
 
+	petRepo := repository.NewPetRepository()
+	petService := services.NewPetService(petRepo)
+	petHandler := handlers.NewPetHandler(petService)
+
+	mux := http.NewServeMux()
+
 	// pet endpoints
-	http.HandleFunc("PUT /pet", _)
-	http.HandleFunc("POST /pet", _)
-	http.HandleFunc("GET /pet/findByStatus", _)
-	http.HandleFunc("GET /pet/findByTags", _)
-	http.HandleFunc("GET /pet/{petId}", _)
-	http.HandleFunc("POST /pet/{petId}", _)
-	http.HandleFunc("DELETE /pet/{petId}", _)
-	http.HandleFunc("POST /pet/{petId}/uploadImage", _)
+	mux.HandleFunc("PUT /pet", _)
+	mux.HandleFunc("POST /pet", _)
+	mux.HandleFunc("GET /pet/findByStatus", _)
+	mux.HandleFunc("GET /pet/findByTags", _)
+	mux.HandleFunc("GET /pet/{petId}", _)
+	mux.HandleFunc("POST /pet/{petId}", _)
+	mux.HandleFunc("DELETE /pet/{petId}", _)
+	mux.HandleFunc("POST /pet/{petId}/uploadImage", _)
 
 	// store endpoints
-	http.HandleFunc("GET /store/inventory", _)
-	http.HandleFunc("POST /store/order", _)
-	http.HandleFunc("GET /store/order/{storeId}", _)
-	http.HandleFunc("DELETE /store/order/{storeId}", _)
+	mux.HandleFunc("GET /store/inventory", _)
+	mux.HandleFunc("POST /store/order", _)
+	mux.HandleFunc("GET /store/order/{storeId}", _)
+	mux.HandleFunc("DELETE /store/order/{storeId}", _)
 
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":8080", mux)
 }
