@@ -4,6 +4,6 @@ package repository
 type PetRepository struct {
 }
 
-func NewPetRepositor() *PetRepository {
+func NewPetRepository() *PetRepository {
 	return &PetRepository{}
 }

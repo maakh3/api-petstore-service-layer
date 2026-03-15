@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
+
 	"services"
+	"models"
 )
 
 type PetHandler struct {
@@ -31,7 +34,7 @@ func (p *PetHandler) AddPet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(201, "Pet created successfully") // Status Created
+	w.WriteHeader(201) // Status Created
 	json.NewEncoder(w).Encode(createdPet)
 }
 
@@ -54,7 +57,7 @@ func (p *PetHandler) UpdatePet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200, "Pet updated successfully") // Status OK
+	w.WriteHeader(200) // Status OK
 	json.NewEncoder(w).Encode(updatedPet)
 }
 
@@ -78,7 +81,7 @@ func (p *PetHandler) FindPetByStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200, "Pets retrieved by status successfully")
+	w.WriteHeader(200)
 	json.NewEncoder(w).Encode(pets)
 }
 
@@ -98,7 +101,7 @@ func (p *PetHandler) FindPetByTags(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200, "Pets retrieved by tags successfully")
+	w.WriteHeader(200)
 	json.NewEncoder(w).Encode(pets)
 }
 
@@ -155,7 +158,7 @@ func (p *PetHandler) UpdatePetByForm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200, "Pet updated successfully")
+	w.WriteHeader(200)
 	json.NewEncoder(w).Encode(updatedPet)
 
 }
@@ -177,7 +180,8 @@ func (p *PetHandler) DeletePet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(204, "Pet deleted successfully") // Status No Content
+	w.WriteHeader(204) // Status No Content
+	//w.Write([]byte("Pet deleted successfully"))
 }
 
 func (p *PetHandler) UploadImage(w http.ResponseWriter, r *http.Request) {
@@ -217,5 +221,6 @@ func (p *PetHandler) UploadImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(200, "Image uploaded successfully")
+	w.WriteHeader(200)
+	//w.Write([]byte("Image uploaded successfully"))
 }

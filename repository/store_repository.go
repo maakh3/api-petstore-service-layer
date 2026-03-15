@@ -4,5 +4,5 @@ type StoreRepository struct {
 }
 
 func NewStoreRepository() *StoreRepository {
-	return *StoreRepository{}
+	return &StoreRepository{}
 }

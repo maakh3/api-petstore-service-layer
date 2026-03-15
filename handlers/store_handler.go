@@ -9,5 +9,5 @@ type StoreHandler struct {
 }
 
 func NewStoreHandler(service *services.StoreService) *StoreHandler {
-	return *StoreHandler{service: service}
+	return &StoreHandler{service: service}
 }
