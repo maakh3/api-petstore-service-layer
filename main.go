@@ -1,12 +1,12 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 
-	"handlers"
-	"repository"
-	"services"
+	"api-petstore-service-layer/handlers"
+	"api-petstore-service-layer/repository"
+	"api-petstore-service-layer/services"
 )
 
 func main() {
@@ -24,18 +24,22 @@ func main() {
 	// pet endpoints
 	mux.HandleFunc("POST /pet", petHandler.AddPet)
 	mux.HandleFunc("PUT /pet", petHandler.UpdatePet)
-	mux.HandleFunc("GET /pet/findByStatus", petHandler.FindPetsByStatus)
-	mux.HandleFunc("GET /pet/findByTags", petHandler.FindPetsByTags)
-	mux.HandleFunc("GET /pet/{petId}", petHandler.GetById)
-	mux.HandleFunc("POST /pet/{petId}", petHandler.UpdatePetByForm)
-	mux.HandleFunc("DELETE /pet/{petId}", petHandler.DeletePet)
-	mux.HandleFunc("POST /pet/{petId}/uploadImage", petHandler.UploadImage)
+	//mux.HandleFunc("GET /pet/findByStatus", petHandler.FindPetsByStatus)
+	//mux.HandleFunc("GET /pet/findByTags", petHandler.FindPetsByTags)
+	//mux.HandleFunc("GET /pet/{petId}", petHandler.GetById)
+	//mux.HandleFunc("POST /pet/{petId}", petHandler.UpdatePetByForm)
+	//mux.HandleFunc("DELETE /pet/{petId}", petHandler.DeletePet)
+	//mux.HandleFunc("POST /pet/{petId}/uploadImage", petHandler.UploadImage)
 
 	// store endpoints
-	mux.HandleFunc("GET /store/inventory", storeHandler.GetStoreInventory)
-	mux.HandleFunc("POST /store/order", storeHandler.CreateNewOrder)
-	mux.HandleFunc("GET /store/order/{storeId}", storeHandler.GetOrderById)
-	mux.HandleFunc("DELETE /store/order/{storeId}", storeHandler.DeleteOrder)
+	_ = storeHandler
+	// mux.HandleFunc("GET /store/inventory", storeHandler.GetStoreInventory)
+	// mux.HandleFunc("POST /store/order", storeHandler.CreateNewOrder)
+	// mux.HandleFunc("GET /store/order/{storeId}", storeHandler.GetOrderById)
+	// mux.HandleFunc("DELETE /store/order/{storeId}", storeHandler.DeleteOrder)
 
-	http.ListenAndServe(":8080", mux)
+	log.Println("\napi-petstore-service-layer IS UP & RUNNING ON PORT 8080...")
+	if err := http.ListenAndServe(":8080", mux); err != nil {
+		log.Fatalf("server failed to start: %v", err)
+	}
 }

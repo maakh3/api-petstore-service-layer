@@ -1,7 +1,9 @@
 package handlers
 
 import (
-	"services"
+	//"net/http"
+
+	"api-petstore-service-layer/services"
 )
 
 type StoreHandler struct {
@@ -9,5 +11,6 @@ type StoreHandler struct {
 }
 
 func NewStoreHandler(service *services.StoreService) *StoreHandler {
+
 	return &StoreHandler{service: service}
 }

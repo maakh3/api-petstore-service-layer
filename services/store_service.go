@@ -1,7 +1,7 @@
 package services
 
 import (
-	"repository"
+	"api-petstore-service-layer/repository"
 )
 
 type StoreService struct {
