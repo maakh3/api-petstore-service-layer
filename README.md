@@ -6,6 +6,8 @@ containerised and spun up using docker-compose.
 All database transactions should be ACID with appropriate locking in place depending on the nature of the transaction.
 All response code should be integer values in the first iteration.
 
+-------
+
 ## Additional requirements
 • All code should be written using TDD where appropriate, with the correct approach, top-down vs bottom-up. 
 • Logging should be implemented using slog and logged at the right level. 
