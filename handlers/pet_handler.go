@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"models"
-	"services"
+	"api-petstore-service-layer/models"
+	"api-petstore-service-layer/services"
 )
 
 type PetHandler struct {
@@ -61,7 +61,7 @@ func (p *PetHandler) UpdatePet(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(updatedPet)
 }
 
-func (p *PetHandler) FindPetByStatus(w http.ResponseWriter, r *http.Request) {
+func (p *PetHandler) FindPetsByStatus(w http.ResponseWriter, r *http.Request) {
 	petStatus := r.URL.Query().Get("status")
 	// petStatus is a comma-separated list of statuses, e.g. "available,pending"
 
@@ -85,7 +85,7 @@ func (p *PetHandler) FindPetByStatus(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(pets)
 }
 
-func (p *PetHandler) FindPetByTags(w http.ResponseWriter, r *http.Request) {
+func (p *PetHandler) FindPetsByTags(w http.ResponseWriter, r *http.Request) {
 	tags := r.URL.Query().Get("tags")
 	// tags is also a comma-separated list of tags, e.g. "tag1,tag2"
 
