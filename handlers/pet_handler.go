@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"services"
 	"models"
+	"services"
 )
 
 type PetHandler struct {
