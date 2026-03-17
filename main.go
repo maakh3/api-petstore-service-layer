@@ -24,7 +24,7 @@ func main() {
 	// pet endpoints
 	mux.HandleFunc("POST /pet", petHandler.AddPet)
 	mux.HandleFunc("PUT /pet", petHandler.UpdatePet)
-	//mux.HandleFunc("GET /pet/findByStatus", petHandler.FindPetsByStatus)
+	mux.HandleFunc("GET /pet/findByStatus", petHandler.FindPetsByStatus)
 	//mux.HandleFunc("GET /pet/findByTags", petHandler.FindPetsByTags)
 	//mux.HandleFunc("GET /pet/{petId}", petHandler.GetById)
 	//mux.HandleFunc("POST /pet/{petId}", petHandler.UpdatePetByForm)

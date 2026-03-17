@@ -75,3 +75,57 @@ func TestPetServiceUpdatePet_NotFound(t *testing.T) {
 		t.Fatalf("UpdatePet() error = %v, want %v", err, ErrPetNotFound)
 	}
 }
+
+func TestPetServiceFindPetsByStatus(t *testing.T) {
+	repo := repository.NewPetRepository()
+	service := NewPetService(repo)
+
+	_, err := repo.AddPet(models.Pet{Name: "fido", Status: "available"})
+	if err != nil {
+		t.Fatalf("AddPet() setup unexpected error: %v", err)
+	}
+	_, err = repo.AddPet(models.Pet{Name: "mittens", Status: "sold"})
+	if err != nil {
+		t.Fatalf("AddPet() setup unexpected error: %v", err)
+	}
+	_, err = repo.AddPet(models.Pet{Name: "rex", Status: "available"})
+	if err != nil {
+		t.Fatalf("AddPet() setup unexpected error: %v", err)
+	}
+
+	got, err := service.FindPetsByStatus("available")
+	if err != nil {
+		t.Fatalf("FindPetsByStatus() unexpected error: %v", err)
+	}
+
+	if len(got) != 2 {
+		t.Fatalf("FindPetsByStatus() len = %d, want 2", len(got))
+	}
+	for _, pet := range got {
+		if pet.Status != "available" {
+			t.Fatalf("FindPetsByStatus() returned status %q, want %q", pet.Status, "available")
+		}
+	}
+}
+
+func TestPetServiceFindPetsByStatus_NoMatch(t *testing.T) {
+	repo := repository.NewPetRepository()
+	service := NewPetService(repo)
+
+	_, err := repo.AddPet(models.Pet{Name: "fido", Status: "sold"})
+	if err != nil {
+		t.Fatalf("AddPet() setup unexpected error: %v", err)
+	}
+
+	got, err := service.FindPetsByStatus("pending")
+	if err != nil {
+		t.Fatalf("FindPetsByStatus() unexpected error: %v", err)
+	}
+
+	if got == nil {
+		t.Fatal("FindPetsByStatus() returned nil slice, want empty slice")
+	}
+	if len(got) != 0 {
+		t.Fatalf("FindPetsByStatus() len = %d, want 0", len(got))
+	}
+}

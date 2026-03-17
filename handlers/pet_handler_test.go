@@ -161,4 +161,92 @@ func TestPetHandlerUpdatePet_NotFound(t *testing.T) {
 	}
 }
 
+// Find by status tests --------------
+func TestPetHandlerFindPetsByStatus(t *testing.T) {
+	repo := repository.NewPetRepository()
+	service := services.NewPetService(repo)
+	h := NewPetHandler(service)
 
+	for _, pet := range []models.Pet{
+		{Name: "fido", Status: "available"},
+		{Name: "rex", Status: "available"},
+		{Name: "mittens", Status: "sold"},
+	} {
+		if _, err := service.AddPet(pet); err != nil {
+			t.Fatalf("setup AddPet() unexpected error: %v", err)
+		}
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/pet/findByStatus?status=available", nil)
+	w := httptest.NewRecorder()
+
+	h.FindPetsByStatus(w, req)
+
+	res := w.Result()
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("FindPetsByStatus() status = %d, want %d", res.StatusCode, http.StatusOK)
+	}
+
+	var got []models.Pet
+	if err := json.NewDecoder(res.Body).Decode(&got); err != nil {
+		t.Fatalf("failed to decode FindPetsByStatus() response: %v", err)
+	}
+
+	if len(got) != 2 {
+		t.Fatalf("FindPetsByStatus() returned %d pets, want 2", len(got))
+	}
+	for _, pet := range got {
+		if pet.Status != "available" {
+			t.Fatalf("FindPetsByStatus() returned pet with status %q, want %q", pet.Status, "available")
+		}
+	}
+}
+
+func TestPetHandlerFindPetsByStatus_NoMatch(t *testing.T) {
+	repo := repository.NewPetRepository()
+	service := services.NewPetService(repo)
+	h := NewPetHandler(service)
+
+	if _, err := service.AddPet(models.Pet{Name: "mittens", Status: "sold"}); err != nil {
+		t.Fatalf("setup AddPet() unexpected error: %v", err)
+	}
+
+	req := httptest.NewRequest(http.MethodGet, "/pet/findByStatus?status=pending", nil)
+	w := httptest.NewRecorder()
+
+	h.FindPetsByStatus(w, req)
+
+	res := w.Result()
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("FindPetsByStatus() status = %d, want %d", res.StatusCode, http.StatusOK)
+	}
+
+	var got []models.Pet
+	if err := json.NewDecoder(res.Body).Decode(&got); err != nil {
+		t.Fatalf("failed to decode FindPetsByStatus() response: %v", err)
+	}
+
+	if len(got) != 0 {
+		t.Fatalf("FindPetsByStatus() returned %d pets, want 0", len(got))
+	}
+}
+
+func TestPetHandlerFindPetsByStatus_MissingStatus(t *testing.T) {
+	h := newTestPetHandler()
+
+	req := httptest.NewRequest(http.MethodGet, "/pet/findByStatus", nil)
+	w := httptest.NewRecorder()
+
+	h.FindPetsByStatus(w, req)
+
+	res := w.Result()
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusBadRequest {
+		t.Fatalf("FindPetsByStatus() status = %d, want %d", res.StatusCode, http.StatusBadRequest)
+	}
+}

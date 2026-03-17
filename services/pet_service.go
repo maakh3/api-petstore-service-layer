@@ -24,3 +24,8 @@ func (s *PetService) UpdatePet(pet models.Pet) (models.Pet, error) {
 	}
 	return updated, nil
 }
+
+func (s *PetService) FindPetsByStatus(status string) ([]models.Pet, error) {
+	return s.repo.FindPetsByStatus(status)
+}
+

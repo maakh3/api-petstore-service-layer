@@ -66,29 +66,25 @@ func (p *PetHandler) UpdatePet(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(updatedPet)
 }
 
-//func (p *PetHandler) FindPetsByStatus(w http.ResponseWriter, r *http.Request) {
-//	petStatus := r.URL.Query().Get("status")
-//	// petStatus is a comma-separated list of statuses, e.g. "available,pending"
-//
-//	if petStatus == "" {
-//		http.Error(w, "Status query parameter is required", 400)
-//		return
-//	}
-//
-//	pets, err := p.service.FindPetByStatus(petStatus)
-//	if err != nil {
-//		http.Error(w, "Failed to retrieve pets", 500)
-//		// todo - maybe all these 500s become 422s once i implement the service layer?
-//		// because if the service layer validates the input and returns an error for invalid status values,
-//		// then that should be a 422 Unprocessable Entity rather than a 500 Internal Server Error.
-//		// todo - also should i return an error message in the body here?
-//		return
-//	}
-//
-//	w.Header().Set("Content-Type", "application/json")
-//	w.WriteHeader(200)
-//	json.NewEncoder(w).Encode(pets)
-//}
+func (p *PetHandler) FindPetsByStatus(w http.ResponseWriter, r *http.Request) {
+	petStatus := r.URL.Query().Get("status")
+	// petStatus is a comma-separated list of statuses, e.g. "available,pending"
+
+	if petStatus == "" {
+		http.Error(w, "Status query parameter is required", 400)
+		return
+	}
+
+	pets, err := p.service.FindPetsByStatus(petStatus)
+	if err != nil {
+		http.Error(w, "Failed to retrieve pets", 500)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	json.NewEncoder(w).Encode(pets)
+}
 //
 //func (p *PetHandler) FindPetsByTags(w http.ResponseWriter, r *http.Request) {
 //	tags := r.URL.Query().Get("tags")
