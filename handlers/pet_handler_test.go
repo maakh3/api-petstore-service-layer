@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"api-petstore-service-layer/models"
-	"api-petstore-service-layer/repository"
-	"api-petstore-service-layer/services"
+	"github.com/maakh3/api-petstore-service-layer/models"
+	"github.com/maakh3/api-petstore-service-layer/repository"
+	"github.com/maakh3/api-petstore-service-layer/services"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"

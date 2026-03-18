@@ -3,7 +3,7 @@ package handlers
 import (
 	//"net/http"
 
-	"api-petstore-service-layer/services"
+	"github.com/maakh3/api-petstore-service-layer/services"
 )
 
 type StoreHandler struct {

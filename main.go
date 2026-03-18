@@ -1,19 +1,22 @@
 package main
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
+	"os"
+	"strings"
 
-	"api-petstore-service-layer/handlers"
-	"api-petstore-service-layer/repository"
-	"api-petstore-service-layer/services"
+	"github.com/maakh3/api-petstore-service-layer/handlers"
+	"github.com/maakh3/api-petstore-service-layer/repository"
+	"github.com/maakh3/api-petstore-service-layer/services"
 )
 
 func main() {
+	logger := setupLogging()
 
-	petRepo := repository.NewPetRepository()
-	petService := services.NewPetService(petRepo)
-	petHandler := handlers.NewPetHandler(petService)
+	petRepo := repository.NewPetRepository(logger)
+	petService := services.NewPetService(petRepo, logger)
+	petHandler := handlers.NewPetHandler(petService, logger)
 
 	storeRepo := repository.NewStoreRepository()
 	storeService := services.NewStoreService(storeRepo)
@@ -38,8 +41,23 @@ func main() {
 	// mux.HandleFunc("GET /store/order/{storeId}", storeHandler.GetOrderById)
 	// mux.HandleFunc("DELETE /store/order/{storeId}", storeHandler.DeleteOrder)
 
-	log.Println("\napi-petstore-service-layer IS UP & RUNNING ON PORT 8080...")
+	logger.Info("api-petstore-service-layer is up and running", "port", 8080)
 	if err := http.ListenAndServe(":8080", mux); err != nil {
-		log.Fatalf("server failed to start: %v", err)
+		logger.Error("server failed to start", "error", err)
+		os.Exit(1)
 	}
+}
+
+func setupLogging() *slog.Logger {
+	logLevel := new(slog.LevelVar)
+	logLevel.Set(slog.LevelInfo)
+
+	if strings.EqualFold(os.Getenv("LOG_LEVEL"), "debug") {
+		logLevel.Set(slog.LevelDebug)
+	}
+
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: logLevel}))
+	slog.SetDefault(logger)
+
+	return logger
 }

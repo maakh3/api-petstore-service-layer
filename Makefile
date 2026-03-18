@@ -3,7 +3,7 @@
 docker_build:
 	docker build -t api-petstore-service-layer .
 
-docker_run:
+docker_run: docker_build
 	docker run --rm -p 8080:8080 --name api-petstore-service-layer api-petstore-service-layer
 
 docker_unit_test:

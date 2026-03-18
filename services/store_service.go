@@ -1,7 +1,7 @@
 package services
 
 import (
-	"api-petstore-service-layer/repository"
+	"github.com/maakh3/api-petstore-service-layer/repository"
 )
 
 type StoreService struct {

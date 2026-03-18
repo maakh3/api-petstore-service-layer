@@ -1,3 +1,4 @@
-module api-petstore-service-layer
+module github.com/maakh3/api-petstore-service-layer
 
-go 1.25
+go 1.25.7
+

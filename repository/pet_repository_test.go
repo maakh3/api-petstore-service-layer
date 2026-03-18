@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"api-petstore-service-layer/models"
+	"github.com/maakh3/api-petstore-service-layer/models"
 	"reflect"
 	"strings"
 	"testing"

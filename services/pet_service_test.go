@@ -1,8 +1,8 @@
 package services
 
 import (
-	"api-petstore-service-layer/models"
-	"api-petstore-service-layer/repository"
+	"github.com/maakh3/api-petstore-service-layer/models"
+	"github.com/maakh3/api-petstore-service-layer/repository"
 	"testing"
 )
 
