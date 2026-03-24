@@ -1,6 +1,8 @@
 package services
 
 import (
+	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/maakh3/api-petstore-service-layer/mocks"
@@ -14,7 +16,7 @@ func TestPetService_AddPet(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		mockRepo := mocks.NewMockPetRepositoryInterface(ctrl)
 
-		input := models.Pet{Name: "fido", Status: "available", Tags: []models.Tag{{Id: 1, Name: "small"}}}
+		input := models.Pet{Id: 1, Name: "fido", Status: "available", Tags: []models.Tag{{Id: 1, Name: "small"}}}
 		want := models.Pet{Id: 1, Name: "fido", Status: "available", Tags: []models.Tag{{Id: 1, Name: "small"}}}
 		mockRepo.EXPECT().AddPet(input).Return(want, nil) // repository add pet call, mocked
 
@@ -23,7 +25,7 @@ func TestPetService_AddPet(t *testing.T) {
 		if err != nil {
 			t.Fatalf("AddPet() unexpected error: %v", err)
 		}
-		if got.Id != 1 {
+		if got.Id != input.Id {
 			t.Fatalf("AddPet() Id = %d, want 1", got.Id)
 		}
 		if got.Name != input.Name {
@@ -45,7 +47,6 @@ func TestPetService_UpdatePet(t *testing.T) {
 		input := models.Pet{Name: "fido-updated", Status: "sold"}
 		want := models.Pet{Id: 0, Name: "fido-updated", Status: "sold"}
 		mockRepo.EXPECT().UpdatePet(input).Return(want, nil)
-		// ----
 
 		service := NewPetService(mockRepo)
 
@@ -65,14 +66,17 @@ func TestPetService_UpdatePet(t *testing.T) {
 		}
 	})
 	t.Run("not found", func(t *testing.T) {
-		repo := repository.NewPetRepository()
-		service := NewPetService(repo)
+		ctrl := gomock.NewController(t)
+		mockRepo := mocks.NewMockPetRepositoryInterface(ctrl)
+		input := models.Pet{Id: 999, Name: "ghost", Status: "available"}
+		mockRepo.EXPECT().UpdatePet(input).Return(models.Pet{}, fmt.Errorf("pet with Id 999 not found"))
 
+		service := NewPetService(mockRepo)
 		_, err := service.UpdatePet(models.Pet{Id: 999, Name: "ghost", Status: "available"})
 		if err == nil {
 			t.Fatal("UpdatePet() error = nil, want ErrPetNotFound")
 		}
-		if err != ErrPetNotFound {
+		if !errors.Is(err, ErrPetNotFound) {
 			t.Fatalf("UpdatePet() error = %v, want %v", err, ErrPetNotFound)
 		}
 	})
