@@ -8,11 +8,11 @@ import (
 )
 
 type PetService struct {
-	repo   *repository.PetRepository
+	repo   repository.PetRepositoryInterface
 	logger *slog.Logger
 }
 
-func NewPetService(repo *repository.PetRepository, logger ...*slog.Logger) *PetService {
+func NewPetService(repo repository.PetRepositoryInterface, logger ...*slog.Logger) *PetService {
 	selectedLogger := slog.Default()
 	if len(logger) > 0 && logger[0] != nil {
 		selectedLogger = logger[0]

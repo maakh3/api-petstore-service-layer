@@ -14,11 +14,11 @@ import (
 )
 
 type PetHandler struct {
-	service *services.PetService
+	service services.PetServiceInterface
 	logger  *slog.Logger
 }
 
-func NewPetHandler(service *services.PetService, logger ...*slog.Logger) *PetHandler {
+func NewPetHandler(service services.PetServiceInterface, logger ...*slog.Logger) *PetHandler {
 	selectedLogger := slog.Default()
 	if len(logger) > 0 && logger[0] != nil {
 		selectedLogger = logger[0]
