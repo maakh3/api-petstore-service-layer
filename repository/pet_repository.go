@@ -86,44 +86,6 @@ func (r *PetRepository) FindPetsByTags(tags []models.Tag) ([]models.Pet, error) 
 	return pets, nil
 }
 
-//
-//func (r *PetRepository) GetById(id int64) (models.Pet, error) {
-//	r.mu.RLock()
-//	defer r.mu.RUnlock()
-//
-//	pet, exists := r.pets[id]
-//	if !exists {
-//		return models.Pet{}, fmt.Errorf("pet with Id %d not found", id)
-//	}
-//	return *pet, nil
-//}
-//
-//func (r *PetRepository) UploadImage(id int64, imageUrl string) (models.Pet, error) {
-//	r.mu.Lock()
-//	defer r.mu.Unlock()
-//
-//	pet, exists := r.pets[id]
-//	if !exists {
-//		return models.Pet{}, fmt.Errorf("pet with Id %d not found", id)
-//	}
-//
-//	pet.PhotoUrls = append(pet.PhotoUrls, imageUrl) // add the new image URL to the pet's photo URLs
-//	return *pet, nil
-//}
-//
-//func (r *PetRepository) Delete(id int64) error {
-//	r.mu.Lock()
-//	defer r.mu.Unlock()
-//
-//	if _, exists := r.pets[id]; !exists {
-//		return fmt.Errorf("pet with Id %d not found", id)
-//	}
-//
-//	delete(r.pets, id)
-//	return nil
-//}
-//
-
 // helper function to check if one pet's tags contain all the specified tags
 func containsAllTags(petTags []models.Tag, searchTags []models.Tag) bool {
 	tagSet := make(map[string]struct{}) // create a set of the pet's tags for efficient lookup
