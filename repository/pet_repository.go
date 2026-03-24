@@ -73,19 +73,19 @@ func (r *PetRepository) FindPetsByStatus(status string) ([]models.Pet, error) {
 	return pets, nil
 }
 
-//
-//func (r *PetRepository) FindPetsByTags(tags []models.Tag) ([]models.Pet, error) {
-//	r.mu.RLock()
-//	defer r.mu.RUnlock()
-//
-//	var pets []models.Pet
-//	for _, pet := range r.pets {
-//		if containsAllTags(pet.Tags, tags) {
-//			pets = append(pets, *pet)
-//		}
-//	}
-//	return pets, nil
-//}
+func (r *PetRepository) FindPetsByTags(tags []models.Tag) ([]models.Pet, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	var pets = make([]models.Pet, 0)
+	for _, pet := range r.pets {
+		if containsAllTags(pet.Tags, tags) {
+			pets = append(pets, *pet)
+		}
+	}
+	return pets, nil
+}
+
 //
 //func (r *PetRepository) GetById(id int64) (models.Pet, error) {
 //	r.mu.RLock()
@@ -123,17 +123,18 @@ func (r *PetRepository) FindPetsByStatus(status string) ([]models.Pet, error) {
 //	return nil
 //}
 //
-//// helper function to check if one pet's tags contain all the specified tags
-//func containsAllTags(petTags []models.Tag, searchTags []models.Tag) bool {
-//	tagSet := make(map[string]struct{}) // create a set of the pet's tags for efficient lookup
-//	for _, tag := range petTags {       // iterate over the pet's tags and add them to the set
-//		tagSet[tag.Name] = struct{}{} // the value doesn't matter, we just care about the keys for existence checks
-//	}
-//
-//	for _, searchTag := range searchTags { // iterate over the search tags and check if each one exists in the pet's tag set
-//		if _, exists := tagSet[searchTag.Name]; !exists { // if any search tag is not found in the pet's tags, end the search
-//			return false
-//		}
-//	}
-//	return true
-//}
+
+// helper function to check if one pet's tags contain all the specified tags
+func containsAllTags(petTags []models.Tag, searchTags []models.Tag) bool {
+	tagSet := make(map[string]struct{}) // create a set of the pet's tags for efficient lookup
+	for _, tag := range petTags {       // iterate over the pet's tags and add them to the set
+		tagSet[tag.Name] = struct{}{} // the value doesn't matter, we just care about the keys for existence checks
+	}
+
+	for _, searchTag := range searchTags { // iterate over the search tags and check if each one exists in the pet's tag set
+		if _, exists := tagSet[searchTag.Name]; !exists { // if any search tag is not found in the pet's tags, end the search
+			return false
+		}
+	}
+	return true
+}

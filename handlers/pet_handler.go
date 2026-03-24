@@ -5,6 +5,8 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"strings"
+
 	//"strconv"
 
 	"github.com/maakh3/api-petstore-service-layer/models"
@@ -25,7 +27,6 @@ func NewPetHandler(service *services.PetService, logger ...*slog.Logger) *PetHan
 	return &PetHandler{service: service, logger: selectedLogger}
 }
 
-// the handler functions
 func (p *PetHandler) AddPet(w http.ResponseWriter, r *http.Request) {
 	p.logger.Debug("add pet request received", "method", r.Method, "path", r.URL.Path)
 
@@ -117,26 +118,36 @@ func (p *PetHandler) FindPetsByStatus(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(pets)
 }
 
-//
-//func (p *PetHandler) FindPetsByTags(w http.ResponseWriter, r *http.Request) {
-//	tags := r.URL.Query().Get("tags")
-//	// tags is also a comma-separated list of tags, e.g. "tag1,tag2"
-//
-//	if tags == "" {
-//		http.Error(w, "Tags query parameter is required", 400)
-//		return
-//	}
-//
-//	pets, err := p.service.FindPetByTags(tags)
-//	if err != nil {
-//		http.Error(w, "Failed to retrieve pets", 500)
-//		return
-//	}
-//
-//	w.Header().Set("Content-Type", "application/json")
-//	w.WriteHeader(200)
-//	json.NewEncoder(w).Encode(pets)
-//}
+func (p *PetHandler) FindPetsByTags(w http.ResponseWriter, r *http.Request) {
+	tags := r.URL.Query().Get("tags")
+	// tags is also a comma-separated list of tags, e.g. "tag1,tag2"
+
+	if tags == "" {
+		http.Error(w, "Tags query parameter is required", 400)
+		return
+	}
+
+	tagList := strings.Split(tags, ",")
+	modelTags := make([]models.Tag, 0, len(tagList))
+	for _, tagList := range tagList {
+		name := strings.TrimSpace(tagList)
+		if name == "" {
+			continue
+		}
+		modelTags = append(modelTags, models.Tag{Name: name})
+	}
+
+	pets, err := p.service.FindPetsByTags(modelTags)
+	if err != nil {
+		http.Error(w, "Failed to retrieve pets", 500)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	json.NewEncoder(w).Encode(pets)
+}
+
 //
 //func (p *PetHandler) GetById(w http.ResponseWriter, r *http.Request) {
 //	id, err := strconv.ParseInt(r.PathValue("petId"), 10, 64)

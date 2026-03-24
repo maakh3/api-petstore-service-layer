@@ -1,10 +1,11 @@
 package repository
 
 import (
-	"github.com/maakh3/api-petstore-service-layer/models"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/maakh3/api-petstore-service-layer/models"
 )
 
 func TestRepositoryAddPet(t *testing.T) {
@@ -231,60 +232,60 @@ func TestRepositoryFindPetsByStatus_NoMatch(t *testing.T) {
 //		})
 //	}
 //
-//
-//	func TestRepositoryFindPetsByTags(t *testing.T) {
-//		repo := NewPetRepository()
-//		a, _ := repo.AddPet(testPet("a", "available", "friendly", "small"))
-//		b, _ := repo.AddPet(testPet("b", "available", "friendly"))
-//		c, _ := repo.AddPet(testPet("c", "available", "aggressive"))
-//
-//		t.Run("full match", func(t *testing.T) {
-//			got, err := repo.FindPetsByTags([]models.Tag{{Name: "friendly"}})
-//			if err != nil {
-//				t.Fatalf("FindPetsByTags() unexpected error: %v", err)
-//			}
-//
-//			want := map[int]struct{}{a.Id: {}, b.Id: {}}
-//			gotSet := toIdSet(got)
-//			if len(gotSet) != len(want) {
-//				t.Fatalf("FindPetsByTags() len = %d, want %d", len(gotSet), len(want))
-//			}
-//			for id := range want {
-//				if _, ok := gotSet[id]; !ok {
-//					t.Fatalf("FindPetsByTags() missing Id %d", id)
-//				}
-//			}
-//		})
-//
-//		t.Run("partial miss", func(t *testing.T) {
-//			got, err := repo.FindPetsByTags([]models.Tag{{Name: "friendly"}, {Name: "small"}, {Name: "missing"}})
-//			if err != nil {
-//				t.Fatalf("FindPetsByTags() unexpected error: %v", err)
-//			}
-//			if len(got) != 0 {
-//				t.Fatalf("FindPetsByTags() len = %d, want 0", len(got))
-//			}
-//		})
-//
-//		t.Run("empty search tags is match all", func(t *testing.T) {
-//			got, err := repo.FindPetsByTags(nil)
-//			if err != nil {
-//				t.Fatalf("FindPetsByTags() unexpected error: %v", err)
-//			}
-//
-//			want := map[int]struct{}{a.Id: {}, b.Id: {}, c.Id: {}}
-//			gotSet := toIdSet(got)
-//			if len(gotSet) != len(want) {
-//				t.Fatalf("FindPetsByTags() len = %d, want %d", len(gotSet), len(want))
-//			}
-//			for id := range want {
-//				if _, ok := gotSet[id]; !ok {
-//					t.Fatalf("FindPetsByTags() missing Id %d", id)
-//				}
-//			}
-//		})
-//	}
-//
+
+func TestRepositoryFindPetsByTags(t *testing.T) {
+	repo := NewPetRepository()
+	a, _ := repo.AddPet(testPet("a", "available", "friendly", "small"))
+	b, _ := repo.AddPet(testPet("b", "available", "friendly"))
+	c, _ := repo.AddPet(testPet("c", "available", "aggressive"))
+
+	t.Run("full match", func(t *testing.T) {
+		got, err := repo.FindPetsByTags([]models.Tag{{Name: "friendly"}})
+		if err != nil {
+			t.Fatalf("FindPetsByTags() unexpected error: %v", err)
+		}
+
+		want := map[int]struct{}{a.Id: {}, b.Id: {}}
+		gotSet := toIdSet(got)
+		if len(gotSet) != len(want) {
+			t.Fatalf("FindPetsByTags() len = %d, want %d", len(gotSet), len(want))
+		}
+		for id := range want {
+			if _, ok := gotSet[id]; !ok {
+				t.Fatalf("FindPetsByTags() missing Id %d", id)
+			}
+		}
+	})
+
+	t.Run("partial miss", func(t *testing.T) {
+		got, err := repo.FindPetsByTags([]models.Tag{{Name: "friendly"}, {Name: "small"}, {Name: "missing"}})
+		if err != nil {
+			t.Fatalf("FindPetsByTags() unexpected error: %v", err)
+		}
+		if len(got) != 0 {
+			t.Fatalf("FindPetsByTags() len = %d, want 0", len(got))
+		}
+	})
+
+	t.Run("empty search tags is match all", func(t *testing.T) {
+		got, err := repo.FindPetsByTags(nil)
+		if err != nil {
+			t.Fatalf("FindPetsByTags() unexpected error: %v", err)
+		}
+
+		want := map[int]struct{}{a.Id: {}, b.Id: {}, c.Id: {}}
+		gotSet := toIdSet(got)
+		if len(gotSet) != len(want) {
+			t.Fatalf("FindPetsByTags() len = %d, want %d", len(gotSet), len(want))
+		}
+		for id := range want {
+			if _, ok := gotSet[id]; !ok {
+				t.Fatalf("FindPetsByTags() missing Id %d", id)
+			}
+		}
+	})
+}
+
 //	func TestUploadImage(t *testing.T) {
 //		repo := NewPetRepository()
 //		created, _ := repo.AddPet(testPet("fido", "available"))
@@ -358,25 +359,26 @@ func TestRepositoryFindPetsByStatus_NoMatch(t *testing.T) {
 //			})
 //		}
 //	}
-//func testPet(name, status string, tags ...string) models.Pet {
-//	petTags := make([]models.Tag, 0, len(tags))
-//	for i, tag := range tags {
-//		petTags = append(petTags, models.Tag{Id: i + 1, Name: tag})
-//	}
-//
-//	return models.Pet{
-//		Name:   name,
-//		Status: status,
-//		Tags:   petTags,
-//	}
-//}
 
-//
-//func toIdSet(pets []models.Pet) map[int]struct{} {
-//	// this function converts a slice of Pet objects into a set of their Ids for easier comparison in tests
-//	out := make(map[int]struct{}, len(pets))
-//	for _, pet := range pets {
-//		out[pet.Id] = struct{}{}
-//	}
-//	return out
-//}
+// helper function to
+func testPet(name, status string, tags ...string) models.Pet {
+	petTags := make([]models.Tag, 0, len(tags))
+	for i, tag := range tags {
+		petTags = append(petTags, models.Tag{Id: i + 1, Name: tag})
+	}
+
+	return models.Pet{
+		Name:   name,
+		Status: status,
+		Tags:   petTags,
+	}
+}
+
+func toIdSet(pets []models.Pet) map[int]struct{} {
+	// this function converts a slice of Pet objects into a set of their Ids for easier comparison in tests
+	out := make(map[int]struct{}, len(pets))
+	for _, pet := range pets {
+		out[pet.Id] = struct{}{}
+	}
+	return out
+}
