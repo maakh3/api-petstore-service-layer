@@ -3,28 +3,26 @@ package services
 import (
 	"testing"
 
+	"github.com/maakh3/api-petstore-service-layer/mocks"
 	"github.com/maakh3/api-petstore-service-layer/models"
 	"github.com/maakh3/api-petstore-service-layer/repository"
+	"go.uber.org/mock/gomock"
 )
 
 func TestPetService_AddPet(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
-		repo := repository.NewPetRepository()
-		service := NewPetService(repo)
+		ctrl := gomock.NewController(t)
+		mockRepo := mocks.NewMockPetRepositoryInterface(ctrl)
 
-		input := models.Pet{
-			Name:   "fido",
-			Status: "available",
-			Tags: []models.Tag{
-				{Id: 1, Name: "small"},
-			},
-		}
+		input := models.Pet{Name: "fido", Status: "available", Tags: []models.Tag{{Id: 1, Name: "small"}}}
+		want := models.Pet{Id: 1, Name: "fido", Status: "available", Tags: []models.Tag{{Id: 1, Name: "small"}}}
+		mockRepo.EXPECT().AddPet(input).Return(want, nil) // repository add pet call, mocked
 
-		got, err := service.AddPet(input)
+		service := NewPetService(mockRepo)
+		got, err := service.AddPet(input) // service add pet call, the unit under test
 		if err != nil {
 			t.Fatalf("AddPet() unexpected error: %v", err)
 		}
-
 		if got.Id != 1 {
 			t.Fatalf("AddPet() Id = %d, want 1", got.Id)
 		}
@@ -42,22 +40,22 @@ func TestPetService_AddPet(t *testing.T) {
 
 func TestPetService_UpdatePet(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
-		repo := repository.NewPetRepository()
-		service := NewPetService(repo)
+		ctrl := gomock.NewController(t)
+		mockRepo := mocks.NewMockPetRepositoryInterface(ctrl)
+		input := models.Pet{Name: "fido-updated", Status: "sold"}
+		want := models.Pet{Id: 0, Name: "fido-updated", Status: "sold"}
+		mockRepo.EXPECT().UpdatePet(input).Return(want, nil)
+		// ----
 
-		created, err := repo.AddPet(models.Pet{Name: "fido", Status: "available"})
-		if err != nil {
-			t.Fatalf("AddPet() setup unexpected error: %v", err)
-		}
+		service := NewPetService(mockRepo)
 
-		input := models.Pet{Id: created.Id, Name: "fido-updated", Status: "sold"}
 		got, err := service.UpdatePet(input)
 		if err != nil {
 			t.Fatalf("UpdatePet() unexpected error: %v", err)
 		}
 
-		if got.Id != created.Id {
-			t.Fatalf("UpdatePet() Id = %d, want %d", got.Id, created.Id)
+		if got.Id != want.Id {
+			t.Fatalf("UpdatePet() Id = %d, want %d", got.Id, want.Id)
 		}
 		if got.Name != "fido-updated" {
 			t.Fatalf("UpdatePet() Name = %q, want %q", got.Name, "fido-updated")
