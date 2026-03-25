@@ -74,3 +74,15 @@ func (s *PetService) FindPetsByTags(tags []models.Tag) ([]models.Pet, error) {
 	s.logger.Info("service found pets by tags", "tags", stringTags, "count", petsCount)
 	return pets, nil
 }
+
+func (s *PetService) GetById(id int) (models.Pet, error) {
+	s.logger.Debug("service get by id", "pet_id", id)
+	updated, err := s.repo.GetById(int64(id))
+	if err != nil {
+		s.logger.Info("service pet not found during get by id", "pet_id", id)
+		return models.Pet{}, ErrPetNotFound
+	}
+
+	s.logger.Info("service get by id", "pet_id", updated.Id, "status", updated.Status)
+	return updated, nil
+}

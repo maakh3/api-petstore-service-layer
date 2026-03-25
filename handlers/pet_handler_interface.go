@@ -10,4 +10,5 @@ type PetHandlerInterface interface {
 	UpdatePet(w http.ResponseWriter, r *http.Request)
 	FindPetsByStatus(w http.ResponseWriter, r *http.Request)
 	FindPetsByTags(w http.ResponseWriter, r *http.Request)
+	GetById(w http.ResponseWriter, r *http.Request)
 }

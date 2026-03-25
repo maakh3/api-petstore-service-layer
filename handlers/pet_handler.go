@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"strconv"
 	"strings"
 
 	//"strconv"
@@ -146,4 +147,26 @@ func (p *PetHandler) FindPetsByTags(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
 	json.NewEncoder(w).Encode(pets)
+}
+
+func (p *PetHandler) GetById(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.ParseInt(r.PathValue("petId"), 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid pet ID", 400)
+		return
+	}
+
+	pet, err := p.service.GetById(int(id))
+	if err != nil {
+		if errors.Is(err, services.ErrPetNotFound) {
+			http.Error(w, "Pet not found", 404)
+			return
+		}
+		http.Error(w, "Failed to retrieve pet", 500)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	json.NewEncoder(w).Encode(pet)
 }

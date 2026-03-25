@@ -86,6 +86,17 @@ func (r *PetRepository) FindPetsByTags(tags []models.Tag) ([]models.Pet, error) 
 	return pets, nil
 }
 
+func (r *PetRepository) GetById(id int64) (models.Pet, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	pet, exists := r.pets[id]
+	if !exists {
+		return models.Pet{}, fmt.Errorf("pet with Id %d not found", id)
+	}
+	return *pet, nil
+}
+
 // helper function to check if one pet's tags contain all the specified tags
 func containsAllTags(petTags []models.Tag, searchTags []models.Tag) bool {
 	tagSet := make(map[string]struct{}) // create a set of the pet's tags for efficient lookup

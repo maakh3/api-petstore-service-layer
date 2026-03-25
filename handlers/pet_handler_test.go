@@ -373,3 +373,98 @@ func TestPetHandler_FindPetsByTags(t *testing.T) {
 		}
 	})
 }
+
+func TestPetHandler_GetById(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		mockService := mocks.NewMockPetServiceInterface(ctrl)
+		h := NewPetHandler(mockService)
+
+		want := models.Pet{Id: 3, Name: "sniffles", Status: "pending"}
+		mockService.EXPECT().GetById(3).Return(want, nil)
+
+		req := httptest.NewRequest(http.MethodGet, "/pet/3", nil)
+		req.SetPathValue("petId", "3")
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		h.GetById(w, req)
+		res := w.Result()
+		defer res.Body.Close()
+
+		if res.StatusCode != 200 {
+			t.Fatalf("GetById() status %d, want %d", res.StatusCode, 200)
+		}
+
+		var got models.Pet
+		if err := json.NewDecoder(res.Body).Decode(&got); err != nil {
+			t.Fatalf("failed to decode GetById() response: %v", err)
+		}
+
+		if got.Id != 3 {
+			t.Fatalf("GetById Id = %d, want = 3", got.Id)
+		}
+		if got.Name != "sniffles" {
+			t.Fatalf("GetById Name = %v, want sniffles", got.Name)
+		}
+		if got.Status != "pending" {
+			t.Fatalf("GetById Status = %v, want pending", got.Status)
+		}
+	})
+	t.Run("missing id", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		mockService := mocks.NewMockPetServiceInterface(ctrl)
+		h := NewPetHandler(mockService)
+
+		req := httptest.NewRequest(http.MethodGet, "/pet/", nil)
+		req.SetPathValue("petId", "")
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		h.GetById(w, req)
+		res := w.Result()
+		defer res.Body.Close()
+
+		if res.StatusCode != 400 {
+			t.Fatalf("GetById() status %d, want %d", res.StatusCode, 400)
+		}
+	})
+	t.Run("invalid id", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		mockService := mocks.NewMockPetServiceInterface(ctrl)
+		h := NewPetHandler(mockService)
+
+		req := httptest.NewRequest(http.MethodGet, "/pet/abc", nil)
+		req.SetPathValue("petId", "abc")
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		h.GetById(w, req)
+		res := w.Result()
+		defer res.Body.Close()
+
+		if res.StatusCode != 400 {
+			t.Fatalf("GetById() status %d, want %d", res.StatusCode, 400)
+		}
+	})
+	t.Run("not found", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		mockService := mocks.NewMockPetServiceInterface(ctrl)
+		h := NewPetHandler(mockService)
+
+		mockService.EXPECT().GetById(999).Return(models.Pet{}, services.ErrPetNotFound)
+
+		req := httptest.NewRequest(http.MethodGet, "/pet/999", nil)
+		req.SetPathValue("petId", "999")
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		h.GetById(w, req)
+		res := w.Result()
+		defer res.Body.Close()
+
+		if res.StatusCode != 404 {
+			t.Fatalf("GetById() status %d, want %d", res.StatusCode, 404)
+		}
+	})
+}

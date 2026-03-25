@@ -245,6 +245,60 @@ func TestRepositoryFindPetsByTags(t *testing.T) {
 	})
 }
 
+func TestPetRepository_GetById(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		repo := NewPetRepository()
+		existingPet := models.Pet{
+			Id:     1,
+			Name:   "fido",
+			Status: "available",
+			Tags: []models.Tag{
+				{Id: 1, Name: "small"},
+			},
+		}
+		repo.pets[int64(existingPet.Id)] = &existingPet
+		repo.nextId = 2
+
+		want := models.Pet{
+			Id:     1,
+			Name:   "fido",
+			Status: "available",
+			Tags: []models.Tag{
+				{Id: 1, Name: "small"},
+			},
+		}
+
+		got, err := repo.GetById(1)
+		if err != nil {
+			t.Fatalf("GetById() unexpected error: %v", err)
+		}
+
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("GetById() returned %#v, want %#v", got, want)
+		}
+
+		storedPet, exists := repo.pets[int64(want.Id)]
+		if !exists {
+			t.Fatalf("GetById() did not store pet with Id %d", want.Id)
+		}
+
+		if !reflect.DeepEqual(*storedPet, want) {
+			t.Fatalf("stored pet = %#v, want %#v", *storedPet, want)
+		}
+	})
+	t.Run("not found", func(t *testing.T) {
+		repo := NewPetRepository()
+
+		_, err := repo.GetById(777)
+		if err == nil {
+			t.Fatal("GetById() error = nil, want not found error")
+		}
+		if !strings.Contains(err.Error(), "not found") || !strings.Contains(err.Error(), "Id") {
+			t.Fatalf("UpdatePet() error = %q, want substring match for not found + Id", err.Error())
+		}
+	})
+}
+
 func testPet(name, status string, tags ...string) models.Pet {
 	petTags := make([]models.Tag, 0, len(tags))
 	for i, tag := range tags {

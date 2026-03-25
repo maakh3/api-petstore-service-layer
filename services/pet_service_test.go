@@ -216,3 +216,44 @@ func TestPetService_FindPetsByTags(t *testing.T) {
 		}
 	})
 }
+
+func TestPetService_GetById(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		mockRepo := mocks.NewMockPetRepositoryInterface(ctrl)
+
+		want := models.Pet{Id: 3, Name: "sniffles", Status: "pending"}
+		mockRepo.EXPECT().GetById(int64(3)).Return(want, nil)
+
+		service := NewPetService(mockRepo)
+
+		got, err := service.GetById(3)
+		if err != nil {
+			t.Fatalf("GetById() unexpected error: %v", err)
+		}
+
+		if got.Id != want.Id {
+			t.Fatalf("GetById() Id = %d, want %d", got.Id, want.Id)
+		}
+		if got.Name != "sniffles" {
+			t.Fatalf("GetById() Name = %q, want %q", got.Name, "sniffles")
+		}
+		if got.Status != "pending" {
+			t.Fatalf("GetById() Status = %q, want %q", got.Status, "pending")
+		}
+	})
+	t.Run("not found", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		mockRepo := mocks.NewMockPetRepositoryInterface(ctrl)
+		mockRepo.EXPECT().GetById(int64(999)).Return(models.Pet{}, fmt.Errorf("pet with Id 999 not found"))
+
+		service := NewPetService(mockRepo)
+		_, err := service.GetById(999)
+		if err == nil {
+			t.Fatalf("GetById() error = nil, want ErrPetNotFound")
+		}
+		if !errors.Is(err, ErrPetNotFound) {
+			t.Fatalf("GetById() error = %v, want = %v", err, ErrPetNotFound)
+		}
+	})
+}

@@ -24,6 +24,7 @@ func main() {
 	mux.HandleFunc("PUT /pet", petHandler.UpdatePet)
 	mux.HandleFunc("GET /pet/findByStatus", petHandler.FindPetsByStatus)
 	mux.HandleFunc("GET /pet/findByTags", petHandler.FindPetsByTags)
+	mux.HandleFunc("GET /pet/{petId}", petHandler.GetById)
 
 	logger.Info("api-petstore-service-layer is up and running", "port", 8080)
 	if err := http.ListenAndServe(":8080", mux); err != nil {
