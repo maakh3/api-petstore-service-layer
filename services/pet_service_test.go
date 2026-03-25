@@ -7,7 +7,6 @@ import (
 
 	"github.com/maakh3/api-petstore-service-layer/mocks"
 	"github.com/maakh3/api-petstore-service-layer/models"
-	"github.com/maakh3/api-petstore-service-layer/repository"
 	"go.uber.org/mock/gomock"
 )
 
@@ -84,29 +83,23 @@ func TestPetService_UpdatePet(t *testing.T) {
 
 func TestPetService_FindPetsByStatus(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
-		repo := repository.NewPetRepository()
-		service := NewPetService(repo)
+		ctrl := gomock.NewController(t)
+		mockRepo := mocks.NewMockPetRepositoryInterface(ctrl)
 
-		_, err := repo.AddPet(models.Pet{Name: "fido", Status: "available"})
-		if err != nil {
-			t.Fatalf("AddPet() setup unexpected error: %v", err)
+		want := []models.Pet{
+			{Id: 1, Name: "fido", Status: "available"},
+			{Id: 3, Name: "rex", Status: "available"},
 		}
-		_, err = repo.AddPet(models.Pet{Name: "mittens", Status: "sold"})
-		if err != nil {
-			t.Fatalf("AddPet() setup unexpected error: %v", err)
-		}
-		_, err = repo.AddPet(models.Pet{Name: "rex", Status: "available"})
-		if err != nil {
-			t.Fatalf("AddPet() setup unexpected error: %v", err)
-		}
+		mockRepo.EXPECT().FindPetsByStatus("available").Return(want, nil)
 
+		service := NewPetService(mockRepo)
 		got, err := service.FindPetsByStatus("available")
 		if err != nil {
 			t.Fatalf("FindPetsByStatus() unexpected error: %v", err)
 		}
 
-		if len(got) != 2 {
-			t.Fatalf("FindPetsByStatus() len = %d, want 2", len(got))
+		if len(got) != len(want) {
+			t.Fatalf("FindPetsByStatus() len = %d, want %d", len(got), len(want))
 		}
 		for _, pet := range got {
 			if pet.Status != "available" {
@@ -114,15 +107,13 @@ func TestPetService_FindPetsByStatus(t *testing.T) {
 			}
 		}
 	})
-	t.Run("No match", func(t *testing.T) {
-		repo := repository.NewPetRepository()
-		service := NewPetService(repo)
+	t.Run("no match", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		mockRepo := mocks.NewMockPetRepositoryInterface(ctrl)
 
-		_, err := repo.AddPet(models.Pet{Name: "fido", Status: "sold"})
-		if err != nil {
-			t.Fatalf("AddPet() setup unexpected error: %v", err)
-		}
+		mockRepo.EXPECT().FindPetsByStatus("pending").Return([]models.Pet{}, nil)
 
+		service := NewPetService(mockRepo)
 		got, err := service.FindPetsByStatus("pending")
 		if err != nil {
 			t.Fatalf("FindPetsByStatus() unexpected error: %v", err)
@@ -135,33 +126,44 @@ func TestPetService_FindPetsByStatus(t *testing.T) {
 			t.Fatalf("FindPetsByStatus() len = %d, want 0", len(got))
 		}
 	})
+	t.Run("repository error", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		mockRepo := mocks.NewMockPetRepositoryInterface(ctrl)
+
+		wantErr := errors.New("db unavailable")
+		mockRepo.EXPECT().FindPetsByStatus("available").Return(nil, wantErr)
+
+		service := NewPetService(mockRepo)
+		_, err := service.FindPetsByStatus("available")
+		if err == nil {
+			t.Fatal("FindPetsByStatus() error = nil, want propagated error")
+		}
+		if !errors.Is(err, wantErr) {
+			t.Fatalf("FindPetsByStatus() error = %v, want %v", err, wantErr)
+		}
+	})
 }
 
 func TestPetService_FindPetsByTags(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
-		repo := repository.NewPetRepository()
-		service := NewPetService(repo)
+		ctrl := gomock.NewController(t)
+		mockRepo := mocks.NewMockPetRepositoryInterface(ctrl)
 
-		_, err := repo.AddPet(models.Pet{Name: "fido", Status: "available", Tags: []models.Tag{{Id: 1, Name: "small"}, {Id: 2, Name: "brown"}}})
-		if err != nil {
-			t.Fatalf("AddPet() setup unexpected error: %v", err)
+		searchTags := []models.Tag{{Id: 1, Name: "small"}}
+		want := []models.Pet{
+			{Id: 1, Name: "fido", Status: "available", Tags: []models.Tag{{Id: 1, Name: "small"}, {Id: 2, Name: "brown"}}},
+			{Id: 2, Name: "mittens", Status: "sold", Tags: []models.Tag{{Id: 3, Name: "small"}, {Id: 4, Name: "black"}}},
 		}
-		_, err = repo.AddPet(models.Pet{Name: "mittens", Status: "sold", Tags: []models.Tag{{Id: 3, Name: "small"}, {Id: 4, Name: "black"}}})
-		if err != nil {
-			t.Fatalf("AddPet() setup unexpected error: %v", err)
-		}
-		_, err = repo.AddPet(models.Pet{Name: "rex", Status: "available", Tags: []models.Tag{{Id: 5, Name: "large"}, {Id: 6, Name: "green"}}})
-		if err != nil {
-			t.Fatalf("AddPet() setup unexpected error: %v", err)
-		}
+		mockRepo.EXPECT().FindPetsByTags(searchTags).Return(want, nil)
 
-		got, err := service.FindPetsByTags([]models.Tag{{Id: 1, Name: "small"}})
+		service := NewPetService(mockRepo)
+		got, err := service.FindPetsByTags(searchTags)
 		if err != nil {
 			t.Fatalf("FindPetsByTags() unexpected error: %v", err)
 		}
 
-		if len(got) != 2 {
-			t.Fatalf("FindPetsByTags() len = %d, want 2", len(got))
+		if len(got) != len(want) {
+			t.Fatalf("FindPetsByTags() len = %d, want %d", len(got), len(want))
 		}
 		for _, pet := range got {
 			hasSmallTag := false
@@ -176,16 +178,15 @@ func TestPetService_FindPetsByTags(t *testing.T) {
 			}
 		}
 	})
-	t.Run("No match", func(t *testing.T) {
-		repo := repository.NewPetRepository()
-		service := NewPetService(repo)
+	t.Run("no match", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		mockRepo := mocks.NewMockPetRepositoryInterface(ctrl)
 
-		_, err := repo.AddPet(models.Pet{Name: "fido", Status: "available", Tags: []models.Tag{{Id: 1, Name: "small"}, {Id: 2, Name: "brown"}}})
-		if err != nil {
-			t.Fatalf("AddPet() setup unexpected error: %v", err)
-		}
+		searchTags := []models.Tag{{Id: 999, Name: "nonexistent"}}
+		mockRepo.EXPECT().FindPetsByTags(searchTags).Return([]models.Pet{}, nil)
 
-		got, err := service.FindPetsByTags([]models.Tag{{Id: 999, Name: "nonexistent"}})
+		service := NewPetService(mockRepo)
+		got, err := service.FindPetsByTags(searchTags)
 		if err != nil {
 			t.Fatalf("FindPetsByTags() unexpected error: %v", err)
 		}
@@ -195,6 +196,23 @@ func TestPetService_FindPetsByTags(t *testing.T) {
 		}
 		if len(got) != 0 {
 			t.Fatalf("FindPetsByTags() len = %d, want 0", len(got))
+		}
+	})
+	t.Run("repository error", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		mockRepo := mocks.NewMockPetRepositoryInterface(ctrl)
+
+		searchTags := []models.Tag{{Id: 1, Name: "small"}}
+		wantErr := errors.New("db error")
+		mockRepo.EXPECT().FindPetsByTags(searchTags).Return(nil, wantErr)
+
+		service := NewPetService(mockRepo)
+		_, err := service.FindPetsByTags(searchTags)
+		if err == nil {
+			t.Fatal("FindPetsByTags() error = nil, want propagated error")
+		}
+		if !errors.Is(err, wantErr) {
+			t.Fatalf("FindPetsByTags() error = %v, want %v", err, wantErr)
 		}
 	})
 }

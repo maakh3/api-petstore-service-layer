@@ -2,26 +2,27 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
-	"strconv"
 	"strings"
 	"testing"
 
+	"github.com/maakh3/api-petstore-service-layer/mocks"
 	"github.com/maakh3/api-petstore-service-layer/models"
-	"github.com/maakh3/api-petstore-service-layer/repository"
 	"github.com/maakh3/api-petstore-service-layer/services"
+	"go.uber.org/mock/gomock"
 )
-
-func newTestPetHandler() *PetHandler {
-	repo := repository.NewPetRepository()
-	service := services.NewPetService(repo)
-	return NewPetHandler(service)
-}
 
 func TestPetHandler_AddPet(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
-		h := newTestPetHandler()
+		ctrl := gomock.NewController(t)
+		mockService := mocks.NewMockPetServiceInterface(ctrl)
+		h := NewPetHandler(mockService)
+
+		input := models.Pet{Name: "fido", Status: "available", Tags: []models.Tag{{Id: 1, Name: "small"}}}
+		created := models.Pet{Id: 1, Name: "fido", Status: "available", Tags: []models.Tag{{Id: 1, Name: "small"}}}
+		mockService.EXPECT().AddPet(input).Return(created, nil)
 
 		body := `{"name":"fido","status":"available","tags":[{"id":1,"name":"small"}]}`
 		req := httptest.NewRequest(http.MethodPost, "/pet", strings.NewReader(body))
@@ -53,7 +54,9 @@ func TestPetHandler_AddPet(t *testing.T) {
 		}
 	})
 	t.Run("invalid payload", func(t *testing.T) {
-		h := newTestPetHandler()
+		ctrl := gomock.NewController(t)
+		mockService := mocks.NewMockPetServiceInterface(ctrl)
+		h := NewPetHandler(mockService)
 
 		req := httptest.NewRequest(http.MethodPost, "/pet", strings.NewReader("{"))
 		req.Header.Set("Content-Type", "application/json")
@@ -68,20 +71,41 @@ func TestPetHandler_AddPet(t *testing.T) {
 			t.Fatalf("AddPet() status = %d, want %d", res.StatusCode, http.StatusBadRequest)
 		}
 	})
+	t.Run("service error", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		mockService := mocks.NewMockPetServiceInterface(ctrl)
+		h := NewPetHandler(mockService)
+
+		input := models.Pet{Name: "fido", Status: "available"}
+		mockService.EXPECT().AddPet(input).Return(models.Pet{}, errors.New("service error"))
+
+		body := `{"name":"fido","status":"available"}`
+		req := httptest.NewRequest(http.MethodPost, "/pet", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
+
+		h.AddPet(w, req)
+
+		res := w.Result()
+		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusInternalServerError {
+			t.Fatalf("AddPet() status = %d, want %d", res.StatusCode, http.StatusInternalServerError)
+		}
+	})
 }
 
 func TestPetHandler_UpdatePet(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
-		repo := repository.NewPetRepository()
-		service := services.NewPetService(repo)
-		h := NewPetHandler(service)
+		ctrl := gomock.NewController(t)
+		mockService := mocks.NewMockPetServiceInterface(ctrl)
+		h := NewPetHandler(mockService)
 
-		created, err := service.AddPet(models.Pet{Name: "fido", Status: "available"})
-		if err != nil {
-			t.Fatalf("setup AddPet() unexpected error: %v", err)
-		}
+		input := models.Pet{Id: 1, Name: "fido-updated", Status: "sold"}
+		want := models.Pet{Id: 1, Name: "fido-updated", Status: "sold"}
+		mockService.EXPECT().UpdatePet(input).Return(want, nil)
 
-		body := `{"id":` + strconv.Itoa(created.Id) + `,"name":"fido-updated","status":"sold"}`
+		body := `{"id":1,"name":"fido-updated","status":"sold"}`
 		req := httptest.NewRequest(http.MethodPut, "/pet", strings.NewReader(body))
 		req.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
@@ -100,8 +124,8 @@ func TestPetHandler_UpdatePet(t *testing.T) {
 			t.Fatalf("failed to decode UpdatePet() response: %v", err)
 		}
 
-		if got.Id != created.Id {
-			t.Fatalf("UpdatePet() Id = %d, want %d", got.Id, created.Id)
+		if got.Id != 1 {
+			t.Fatalf("UpdatePet() Id = %d, want 1", got.Id)
 		}
 		if got.Name != "fido-updated" {
 			t.Fatalf("UpdatePet() Name = %q, want %q", got.Name, "fido-updated")
@@ -111,7 +135,9 @@ func TestPetHandler_UpdatePet(t *testing.T) {
 		}
 	})
 	t.Run("invalid payload", func(t *testing.T) {
-		h := newTestPetHandler()
+		ctrl := gomock.NewController(t)
+		mockService := mocks.NewMockPetServiceInterface(ctrl)
+		h := NewPetHandler(mockService)
 
 		req := httptest.NewRequest(http.MethodPut, "/pet", strings.NewReader("{"))
 		req.Header.Set("Content-Type", "application/json")
@@ -127,7 +153,9 @@ func TestPetHandler_UpdatePet(t *testing.T) {
 		}
 	})
 	t.Run("missing id", func(t *testing.T) {
-		h := newTestPetHandler()
+		ctrl := gomock.NewController(t)
+		mockService := mocks.NewMockPetServiceInterface(ctrl)
+		h := NewPetHandler(mockService)
 
 		body := `{"name":"fido-updated","status":"sold"}`
 		req := httptest.NewRequest(http.MethodPut, "/pet", strings.NewReader(body))
@@ -143,8 +171,13 @@ func TestPetHandler_UpdatePet(t *testing.T) {
 			t.Fatalf("UpdatePet() status = %d, want %d", res.StatusCode, http.StatusBadRequest)
 		}
 	})
-	t.Run("no match", func(t *testing.T) {
-		h := newTestPetHandler()
+	t.Run("not found", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		mockService := mocks.NewMockPetServiceInterface(ctrl)
+		h := NewPetHandler(mockService)
+
+		input := models.Pet{Id: 999, Name: "ghost", Status: "available"}
+		mockService.EXPECT().UpdatePet(input).Return(models.Pet{}, services.ErrPetNotFound)
 
 		body := `{"id":999,"name":"ghost","status":"available"}`
 		req := httptest.NewRequest(http.MethodPut, "/pet", strings.NewReader(body))
@@ -164,19 +197,15 @@ func TestPetHandler_UpdatePet(t *testing.T) {
 
 func TestPetHandler_FindPetsByStatus(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
-		repo := repository.NewPetRepository()
-		service := services.NewPetService(repo)
-		h := NewPetHandler(service)
+		ctrl := gomock.NewController(t)
+		mockService := mocks.NewMockPetServiceInterface(ctrl)
+		h := NewPetHandler(mockService)
 
-		for _, pet := range []models.Pet{
-			{Name: "fido", Status: "available"},
-			{Name: "rex", Status: "available"},
-			{Name: "mittens", Status: "sold"},
-		} {
-			if _, err := service.AddPet(pet); err != nil {
-				t.Fatalf("setup AddPet() unexpected error: %v", err)
-			}
+		want := []models.Pet{
+			{Id: 1, Name: "fido", Status: "available"},
+			{Id: 2, Name: "rex", Status: "available"},
 		}
+		mockService.EXPECT().FindPetsByStatus("available").Return(want, nil)
 
 		req := httptest.NewRequest(http.MethodGet, "/pet/findByStatus?status=available", nil)
 		w := httptest.NewRecorder()
@@ -205,13 +234,11 @@ func TestPetHandler_FindPetsByStatus(t *testing.T) {
 		}
 	})
 	t.Run("no match", func(t *testing.T) {
-		repo := repository.NewPetRepository()
-		service := services.NewPetService(repo)
-		h := NewPetHandler(service)
+		ctrl := gomock.NewController(t)
+		mockService := mocks.NewMockPetServiceInterface(ctrl)
+		h := NewPetHandler(mockService)
 
-		if _, err := service.AddPet(models.Pet{Name: "mittens", Status: "sold"}); err != nil {
-			t.Fatalf("setup AddPet() unexpected error: %v", err)
-		}
+		mockService.EXPECT().FindPetsByStatus("pending").Return([]models.Pet{}, nil)
 
 		req := httptest.NewRequest(http.MethodGet, "/pet/findByStatus?status=pending", nil)
 		w := httptest.NewRecorder()
@@ -235,7 +262,9 @@ func TestPetHandler_FindPetsByStatus(t *testing.T) {
 		}
 	})
 	t.Run("missing status", func(t *testing.T) {
-		h := newTestPetHandler()
+		ctrl := gomock.NewController(t)
+		mockService := mocks.NewMockPetServiceInterface(ctrl)
+		h := NewPetHandler(mockService)
 
 		req := httptest.NewRequest(http.MethodGet, "/pet/findByStatus", nil)
 		w := httptest.NewRecorder()
@@ -253,19 +282,16 @@ func TestPetHandler_FindPetsByStatus(t *testing.T) {
 
 func TestPetHandler_FindPetsByTags(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
-		repo := repository.NewPetRepository()
-		service := services.NewPetService(repo)
-		h := NewPetHandler(service)
+		ctrl := gomock.NewController(t)
+		mockService := mocks.NewMockPetServiceInterface(ctrl)
+		h := NewPetHandler(mockService)
 
-		for _, pet := range []models.Pet{
-			{Name: "fido", Status: "available", Tags: []models.Tag{{Id: 1, Name: "small"}}},
-			{Name: "rex", Status: "available", Tags: []models.Tag{{Id: 2, Name: "large"}}},
-			{Name: "mittens", Status: "sold", Tags: []models.Tag{{Id: 1, Name: "small"}}},
-		} {
-			if _, err := service.AddPet(pet); err != nil {
-				t.Fatalf("setup AddPet() unexpected error: %v", err)
-			}
+		searchTags := []models.Tag{{Name: "small"}}
+		want := []models.Pet{
+			{Id: 1, Name: "fido", Status: "available", Tags: []models.Tag{{Id: 1, Name: "small"}}},
+			{Id: 3, Name: "mittens", Status: "sold", Tags: []models.Tag{{Id: 1, Name: "small"}}},
 		}
+		mockService.EXPECT().FindPetsByTags(searchTags).Return(want, nil)
 
 		req := httptest.NewRequest(http.MethodGet, "/pet/findByTags?tags=small", nil)
 		w := httptest.NewRecorder()
@@ -301,7 +327,9 @@ func TestPetHandler_FindPetsByTags(t *testing.T) {
 		}
 	})
 	t.Run("missing tags", func(t *testing.T) {
-		h := newTestPetHandler()
+		ctrl := gomock.NewController(t)
+		mockService := mocks.NewMockPetServiceInterface(ctrl)
+		h := NewPetHandler(mockService)
 
 		req := httptest.NewRequest(http.MethodGet, "/pet/findByTags", nil)
 		w := httptest.NewRecorder()
@@ -316,13 +344,12 @@ func TestPetHandler_FindPetsByTags(t *testing.T) {
 		}
 	})
 	t.Run("no match", func(t *testing.T) {
-		repo := repository.NewPetRepository()
-		service := services.NewPetService(repo)
-		h := NewPetHandler(service)
+		ctrl := gomock.NewController(t)
+		mockService := mocks.NewMockPetServiceInterface(ctrl)
+		h := NewPetHandler(mockService)
 
-		if _, err := service.AddPet(models.Pet{Name: "fido", Status: "available", Tags: []models.Tag{{Id: 1, Name: "small"}}}); err != nil {
-			t.Fatalf("setup AddPet() unexpected error: %v", err)
-		}
+		searchTags := []models.Tag{{Name: "nonexistent"}}
+		mockService.EXPECT().FindPetsByTags(searchTags).Return([]models.Pet{}, nil)
 
 		req := httptest.NewRequest(http.MethodGet, "/pet/findByTags?tags=nonexistent", nil)
 		w := httptest.NewRecorder()

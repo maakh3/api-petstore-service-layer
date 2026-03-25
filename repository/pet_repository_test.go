@@ -9,237 +9,188 @@ import (
 )
 
 func TestRepositoryAddPet(t *testing.T) {
-	repo := NewPetRepository()
-	inputPet := models.Pet{
-		Name:   "fido",
-		Status: "available",
-		Tags: []models.Tag{
-			{Id: 1, Name: "small"},
-			{Id: 2, Name: "friendly"},
-		},
-	}
+	t.Run("happy path", func(t *testing.T) {
+		repo := NewPetRepository()
+		inputPet := models.Pet{
+			Name:   "fido",
+			Status: "available",
+			Tags: []models.Tag{
+				{Id: 1, Name: "small"},
+				{Id: 2, Name: "friendly"},
+			},
+		}
 
-	want := models.Pet{
-		Id:     1,
-		Name:   "fido",
-		Status: "available",
-		Tags: []models.Tag{
-			{Id: 1, Name: "small"},
-			{Id: 2, Name: "friendly"},
-		},
-	}
+		want := models.Pet{
+			Id:     1,
+			Name:   "fido",
+			Status: "available",
+			Tags: []models.Tag{
+				{Id: 1, Name: "small"},
+				{Id: 2, Name: "friendly"},
+			},
+		}
 
-	got, err := repo.AddPet(inputPet)
-	if err != nil {
-		t.Fatalf("AddPet() unexpected error: %v", err)
-	}
+		got, err := repo.AddPet(inputPet)
+		if err != nil {
+			t.Fatalf("AddPet() unexpected error: %v", err)
+		}
 
-	if !reflect.DeepEqual(got, want) {
-		t.Fatalf("AddPet() returned %#v, want %#v", got, want)
-	}
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("AddPet() returned %#v, want %#v", got, want)
+		}
 
-	storedPet, exists := repo.pets[int64(want.Id)]
-	if !exists {
-		t.Fatalf("AddPet() did not store pet with Id %d", want.Id)
-	}
+		storedPet, exists := repo.pets[int64(want.Id)]
+		if !exists {
+			t.Fatalf("AddPet() did not store pet with Id %d", want.Id)
+		}
 
-	if !reflect.DeepEqual(*storedPet, want) {
-		t.Fatalf("stored pet = %#v, want %#v", *storedPet, want)
-	}
+		if !reflect.DeepEqual(*storedPet, want) {
+			t.Fatalf("stored pet = %#v, want %#v", *storedPet, want)
+		}
 
-	if repo.nextId != 2 {
-		t.Fatalf("nextId = %d, want 2", repo.nextId)
-	}
+		if repo.nextId != 2 {
+			t.Fatalf("nextId = %d, want 2", repo.nextId)
+		}
+	})
 }
 
 func TestRepositoryUpdatePet(t *testing.T) {
-	repo := NewPetRepository()
-	existingPet := models.Pet{
-		Id:     1,
-		Name:   "fido",
-		Status: "available",
-		Tags: []models.Tag{
-			{Id: 1, Name: "small"},
-		},
-	}
-	repo.pets[int64(existingPet.Id)] = &existingPet
-	repo.nextId = 2
+	t.Run("happy path", func(t *testing.T) {
+		repo := NewPetRepository()
+		existingPet := models.Pet{
+			Id:     1,
+			Name:   "fido",
+			Status: "available",
+			Tags: []models.Tag{
+				{Id: 1, Name: "small"},
+			},
+		}
+		repo.pets[int64(existingPet.Id)] = &existingPet
+		repo.nextId = 2
 
-	inputPet := models.Pet{
-		Id:     1,
-		Name:   "fido-updated",
-		Status: "sold",
-		Tags: []models.Tag{
-			{Id: 1, Name: "small"},
-		},
-	}
+		inputPet := models.Pet{
+			Id:     1,
+			Name:   "fido-updated",
+			Status: "sold",
+			Tags: []models.Tag{
+				{Id: 1, Name: "small"},
+			},
+		}
 
-	want := models.Pet{
-		Id:     1,
-		Name:   "fido-updated",
-		Status: "sold",
-		Tags: []models.Tag{
-			{Id: 1, Name: "small"},
-		},
-	}
+		want := models.Pet{
+			Id:     1,
+			Name:   "fido-updated",
+			Status: "sold",
+			Tags: []models.Tag{
+				{Id: 1, Name: "small"},
+			},
+		}
 
-	got, err := repo.UpdatePet(inputPet)
-	if err != nil {
-		t.Fatalf("UpdatePet() unexpected error: %v", err)
-	}
+		got, err := repo.UpdatePet(inputPet)
+		if err != nil {
+			t.Fatalf("UpdatePet() unexpected error: %v", err)
+		}
 
-	if !reflect.DeepEqual(got, want) {
-		t.Fatalf("UpdatePet() returned %#v, want %#v", got, want)
-	}
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("UpdatePet() returned %#v, want %#v", got, want)
+		}
 
-	storedPet, exists := repo.pets[int64(want.Id)]
-	if !exists {
-		t.Fatalf("UpdatePet() did not store pet with Id %d", want.Id)
-	}
+		storedPet, exists := repo.pets[int64(want.Id)]
+		if !exists {
+			t.Fatalf("UpdatePet() did not store pet with Id %d", want.Id)
+		}
 
-	if !reflect.DeepEqual(*storedPet, want) {
-		t.Fatalf("stored pet = %#v, want %#v", *storedPet, want)
-	}
+		if !reflect.DeepEqual(*storedPet, want) {
+			t.Fatalf("stored pet = %#v, want %#v", *storedPet, want)
+		}
 
-	if repo.nextId != 2 {
-		t.Fatalf("nextId = %d, want 2", repo.nextId)
-	}
-}
+		if repo.nextId != 2 {
+			t.Fatalf("nextId = %d, want 2", repo.nextId)
+		}
+	})
+	t.Run("not found", func(t *testing.T) {
+		repo := NewPetRepository()
 
-func TestRepositoryUpdatePet_NotFound(t *testing.T) {
-	repo := NewPetRepository()
-
-	_, err := repo.UpdatePet(models.Pet{Id: 777, Name: "ghost"})
-	if err == nil {
-		t.Fatal("UpdatePet() error = nil, want not found error")
-	}
-	if !strings.Contains(err.Error(), "not found") || !strings.Contains(err.Error(), "Id") {
-		t.Fatalf("UpdatePet() error = %q, want substring match for not found + Id", err.Error())
-	}
+		_, err := repo.UpdatePet(models.Pet{Id: 777, Name: "ghost"})
+		if err == nil {
+			t.Fatal("UpdatePet() error = nil, want not found error")
+		}
+		if !strings.Contains(err.Error(), "not found") || !strings.Contains(err.Error(), "Id") {
+			t.Fatalf("UpdatePet() error = %q, want substring match for not found + Id", err.Error())
+		}
+	})
 }
 
 func TestRepositoryFindPetsByStatus(t *testing.T) {
-	repo := NewPetRepository()
+	t.Run("happy path", func(t *testing.T) {
+		repo := NewPetRepository()
 
-	a, err := repo.AddPet(models.Pet{Name: "a", Status: "available"})
-	if err != nil {
-		t.Fatalf("AddPet() setup unexpected error: %v", err)
-	}
-	_, err = repo.AddPet(models.Pet{Name: "b", Status: "pending"})
-	if err != nil {
-		t.Fatalf("AddPet() setup unexpected error: %v", err)
-	}
-	c, err := repo.AddPet(models.Pet{Name: "c", Status: "available"})
-	if err != nil {
-		t.Fatalf("AddPet() setup unexpected error: %v", err)
-	}
-
-	got, err := repo.FindPetsByStatus("available")
-	if err != nil {
-		t.Fatalf("FindPetsByStatus() unexpected error: %v", err)
-	}
-
-	wantIDs := map[int]struct{}{a.Id: {}, c.Id: {}}
-	if len(got) != len(wantIDs) {
-		t.Fatalf("FindPetsByStatus() len = %d, want %d", len(got), len(wantIDs))
-	}
-
-	gotIDs := make(map[int]struct{}, len(got))
-	for _, pet := range got {
-		if pet.Status != "available" {
-			t.Fatalf("FindPetsByStatus() returned status %q, want %q", pet.Status, "available")
+		a, err := repo.AddPet(models.Pet{Name: "a", Status: "available"})
+		if err != nil {
+			t.Fatalf("AddPet() setup unexpected error: %v", err)
 		}
-		gotIDs[pet.Id] = struct{}{}
-	}
-
-	for id := range wantIDs {
-		if _, ok := gotIDs[id]; !ok {
-			t.Fatalf("FindPetsByStatus() missing Id %d", id)
+		_, err = repo.AddPet(models.Pet{Name: "b", Status: "pending"})
+		if err != nil {
+			t.Fatalf("AddPet() setup unexpected error: %v", err)
 		}
-	}
+		c, err := repo.AddPet(models.Pet{Name: "c", Status: "available"})
+		if err != nil {
+			t.Fatalf("AddPet() setup unexpected error: %v", err)
+		}
+
+		got, err := repo.FindPetsByStatus("available")
+		if err != nil {
+			t.Fatalf("FindPetsByStatus() unexpected error: %v", err)
+		}
+
+		wantIDs := map[int]struct{}{a.Id: {}, c.Id: {}}
+		if len(got) != len(wantIDs) {
+			t.Fatalf("FindPetsByStatus() len = %d, want %d", len(got), len(wantIDs))
+		}
+
+		gotIDs := make(map[int]struct{}, len(got))
+		for _, pet := range got {
+			if pet.Status != "available" {
+				t.Fatalf("FindPetsByStatus() returned status %q, want %q", pet.Status, "available")
+			}
+			gotIDs[pet.Id] = struct{}{}
+		}
+
+		for id := range wantIDs {
+			if _, ok := gotIDs[id]; !ok {
+				t.Fatalf("FindPetsByStatus() missing Id %d", id)
+			}
+		}
+	})
+	t.Run("no match", func(t *testing.T) {
+		repo := NewPetRepository()
+
+		_, err := repo.AddPet(models.Pet{Name: "a", Status: "sold"})
+		if err != nil {
+			t.Fatalf("AddPet() setup unexpected error: %v", err)
+		}
+
+		got, err := repo.FindPetsByStatus("pending")
+		if err != nil {
+			t.Fatalf("FindPetsByStatus() unexpected error: %v", err)
+		}
+
+		if got == nil {
+			t.Fatal("FindPetsByStatus() returned nil slice, want empty slice")
+		}
+		if len(got) != 0 {
+			t.Fatalf("FindPetsByStatus() len = %d, want 0", len(got))
+		}
+	})
 }
-
-func TestRepositoryFindPetsByStatus_NoMatch(t *testing.T) {
-	repo := NewPetRepository()
-
-	_, err := repo.AddPet(models.Pet{Name: "a", Status: "sold"})
-	if err != nil {
-		t.Fatalf("AddPet() setup unexpected error: %v", err)
-	}
-
-	got, err := repo.FindPetsByStatus("pending")
-	if err != nil {
-		t.Fatalf("FindPetsByStatus() unexpected error: %v", err)
-	}
-
-	if got == nil {
-		t.Fatal("FindPetsByStatus() returned nil slice, want empty slice")
-	}
-	if len(got) != 0 {
-		t.Fatalf("FindPetsByStatus() len = %d, want 0", len(got))
-	}
-}
-
-//func TestGetById(t *testing.T) {
-//	repo := NewPetRepository()
-//	created, _ := repo.AddPet(testPet("fido", "available"))
-//
-//	t.Run("found", func(t *testing.T) {
-//		got, err := repo.GetById(int64(created.Id))
-//		if err != nil {
-//			t.Fatalf("GetById() unexpected error: %v", err)
-//		}
-//		if got.Id != created.Id {
-//			t.Fatalf("GetById() Id = %d, want %d", got.Id, created.Id)
-//		}
-//	})
-//
-//	t.Run("not found", func(t *testing.T) {
-//		_, err := repo.GetById(999)
-//		if err == nil {
-//			t.Fatal("GetById() error = nil, want not found error")
-//		}
-//		if !strings.Contains(err.Error(), "not found") || !strings.Contains(err.Error(), "Id") {
-//			t.Fatalf("GetById() error = %q, want substring match for not found + Id", err.Error())
-//		}
-//	})
-//}
-
-//	func TestDelete(t *testing.T) {
-//		repo := NewPetRepository()
-//		created, _ := repo.AddPet(testPet("fido", "available"))
-//
-//		t.Run("deletes existing pet", func(t *testing.T) {
-//			err := repo.Delete(int64(created.Id))
-//			if err != nil {
-//				t.Fatalf("Delete() unexpected error: %v", err)
-//			}
-//
-//			_, err = repo.GetById(int64(created.Id))
-//			if err == nil {
-//				t.Fatal("expected deleted pet to be missing")
-//			}
-//		})
-//
-//		t.Run("not found", func(t *testing.T) {
-//			err := repo.Delete(1234)
-//			if err == nil {
-//				t.Fatal("Delete() error = nil, want not found error")
-//			}
-//			if !strings.Contains(err.Error(), "not found") || !strings.Contains(err.Error(), "Id") {
-//				t.Fatalf("Delete() error = %q, want substring match for not found + Id", err.Error())
-//			}
-//		})
-//	}
-//
 
 func TestRepositoryFindPetsByTags(t *testing.T) {
-	repo := NewPetRepository()
-	a, _ := repo.AddPet(testPet("a", "available", "friendly", "small"))
-	b, _ := repo.AddPet(testPet("b", "available", "friendly"))
-	c, _ := repo.AddPet(testPet("c", "available", "aggressive"))
-
 	t.Run("full match", func(t *testing.T) {
+		repo := NewPetRepository()
+		a, _ := repo.AddPet(testPet("a", "available", "friendly", "small"))
+		b, _ := repo.AddPet(testPet("b", "available", "friendly"))
+		_, _ = repo.AddPet(testPet("c", "available", "aggressive"))
+
 		got, err := repo.FindPetsByTags([]models.Tag{{Name: "friendly"}})
 		if err != nil {
 			t.Fatalf("FindPetsByTags() unexpected error: %v", err)
@@ -258,6 +209,9 @@ func TestRepositoryFindPetsByTags(t *testing.T) {
 	})
 
 	t.Run("partial miss", func(t *testing.T) {
+		repo := NewPetRepository()
+		repo.AddPet(testPet("a", "available", "friendly", "small"))
+
 		got, err := repo.FindPetsByTags([]models.Tag{{Name: "friendly"}, {Name: "small"}, {Name: "missing"}})
 		if err != nil {
 			t.Fatalf("FindPetsByTags() unexpected error: %v", err)
@@ -268,6 +222,11 @@ func TestRepositoryFindPetsByTags(t *testing.T) {
 	})
 
 	t.Run("empty search tags is match all", func(t *testing.T) {
+		repo := NewPetRepository()
+		a, _ := repo.AddPet(testPet("a", "available", "friendly", "small"))
+		b, _ := repo.AddPet(testPet("b", "available", "friendly"))
+		c, _ := repo.AddPet(testPet("c", "available", "aggressive"))
+
 		got, err := repo.FindPetsByTags(nil)
 		if err != nil {
 			t.Fatalf("FindPetsByTags() unexpected error: %v", err)
@@ -286,7 +245,6 @@ func TestRepositoryFindPetsByTags(t *testing.T) {
 	})
 }
 
-// helper function to
 func testPet(name, status string, tags ...string) models.Pet {
 	petTags := make([]models.Tag, 0, len(tags))
 	for i, tag := range tags {
@@ -301,7 +259,6 @@ func testPet(name, status string, tags ...string) models.Pet {
 }
 
 func toIdSet(pets []models.Pet) map[int]struct{} {
-	// this function converts a slice of Pet objects into a set of their Ids for easier comparison in tests
 	out := make(map[int]struct{}, len(pets))
 	for _, pet := range pets {
 		out[pet.Id] = struct{}{}
