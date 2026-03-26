@@ -34,8 +34,8 @@ func TestPetHandler_AddPet(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
-		if res.StatusCode != http.StatusCreated {
-			t.Fatalf("AddPet() status = %d, want %d", res.StatusCode, http.StatusCreated)
+		if res.StatusCode != 201 {
+			t.Fatalf("AddPet() status = %d, want %d", res.StatusCode, 201)
 		}
 
 		var got models.Pet
@@ -67,8 +67,8 @@ func TestPetHandler_AddPet(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
-		if res.StatusCode != http.StatusBadRequest {
-			t.Fatalf("AddPet() status = %d, want %d", res.StatusCode, http.StatusBadRequest)
+		if res.StatusCode != 400 {
+			t.Fatalf("AddPet() status = %d, want %d", res.StatusCode, 400)
 		}
 	})
 	t.Run("service error", func(t *testing.T) {
@@ -89,8 +89,8 @@ func TestPetHandler_AddPet(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
-		if res.StatusCode != http.StatusInternalServerError {
-			t.Fatalf("AddPet() status = %d, want %d", res.StatusCode, http.StatusInternalServerError)
+		if res.StatusCode != 500 {
+			t.Fatalf("AddPet() status = %d, want %d", res.StatusCode, 500)
 		}
 	})
 }
@@ -115,8 +115,8 @@ func TestPetHandler_UpdatePet(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
-		if res.StatusCode != http.StatusOK {
-			t.Fatalf("UpdatePet() status = %d, want %d", res.StatusCode, http.StatusOK)
+		if res.StatusCode != 200 {
+			t.Fatalf("UpdatePet() status = %d, want %d", res.StatusCode, 200)
 		}
 
 		var got models.Pet
@@ -148,8 +148,8 @@ func TestPetHandler_UpdatePet(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
-		if res.StatusCode != http.StatusBadRequest {
-			t.Fatalf("UpdatePet() status = %d, want %d", res.StatusCode, http.StatusBadRequest)
+		if res.StatusCode != 400 {
+			t.Fatalf("UpdatePet() status = %d, want %d", res.StatusCode, 400)
 		}
 	})
 	t.Run("missing id", func(t *testing.T) {
@@ -167,8 +167,8 @@ func TestPetHandler_UpdatePet(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
-		if res.StatusCode != http.StatusBadRequest {
-			t.Fatalf("UpdatePet() status = %d, want %d", res.StatusCode, http.StatusBadRequest)
+		if res.StatusCode != 400 {
+			t.Fatalf("UpdatePet() status = %d, want %d", res.StatusCode, 400)
 		}
 	})
 	t.Run("not found", func(t *testing.T) {
@@ -189,8 +189,8 @@ func TestPetHandler_UpdatePet(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
-		if res.StatusCode != http.StatusNotFound {
-			t.Fatalf("UpdatePet() status = %d, want %d", res.StatusCode, http.StatusNotFound)
+		if res.StatusCode != 404 {
+			t.Fatalf("UpdatePet() status = %d, want %d", res.StatusCode, 404)
 		}
 	})
 }
@@ -215,8 +215,8 @@ func TestPetHandler_FindPetsByStatus(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
-		if res.StatusCode != http.StatusOK {
-			t.Fatalf("FindPetsByStatus() status = %d, want %d", res.StatusCode, http.StatusOK)
+		if res.StatusCode != 200 {
+			t.Fatalf("FindPetsByStatus() status = %d, want %d", res.StatusCode, 200)
 		}
 
 		var got []models.Pet
@@ -248,8 +248,8 @@ func TestPetHandler_FindPetsByStatus(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
-		if res.StatusCode != http.StatusOK {
-			t.Fatalf("FindPetsByStatus() status = %d, want %d", res.StatusCode, http.StatusOK)
+		if res.StatusCode != 200 {
+			t.Fatalf("FindPetsByStatus() status = %d, want %d", res.StatusCode, 200)
 		}
 
 		var got []models.Pet
@@ -274,8 +274,8 @@ func TestPetHandler_FindPetsByStatus(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
-		if res.StatusCode != http.StatusBadRequest {
-			t.Fatalf("FindPetsByStatus() status = %d, want %d", res.StatusCode, http.StatusBadRequest)
+		if res.StatusCode != 400 {
+			t.Fatalf("FindPetsByStatus() status = %d, want %d", res.StatusCode, 400)
 		}
 	})
 }
@@ -301,8 +301,8 @@ func TestPetHandler_FindPetsByTags(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
-		if res.StatusCode != http.StatusOK {
-			t.Fatalf("FindPetsByTags() status = %d, want %d", res.StatusCode, http.StatusOK)
+		if res.StatusCode != 200 {
+			t.Fatalf("FindPetsByTags() status = %d, want %d", res.StatusCode, 200)
 		}
 
 		var got []models.Pet
@@ -339,8 +339,8 @@ func TestPetHandler_FindPetsByTags(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
-		if res.StatusCode != http.StatusBadRequest {
-			t.Fatalf("FindPetsByTags() status = %d, want %d", res.StatusCode, http.StatusBadRequest)
+		if res.StatusCode != 400 {
+			t.Fatalf("FindPetsByTags() status = %d, want %d", res.StatusCode, 400)
 		}
 	})
 	t.Run("no match", func(t *testing.T) {
@@ -359,8 +359,8 @@ func TestPetHandler_FindPetsByTags(t *testing.T) {
 		res := w.Result()
 		defer res.Body.Close()
 
-		if res.StatusCode != http.StatusOK {
-			t.Fatalf("FindPetsByTags() status = %d, want %d", res.StatusCode, http.StatusOK)
+		if res.StatusCode != 200 {
+			t.Fatalf("FindPetsByTags() status = %d, want %d", res.StatusCode, 200)
 		}
 
 		var got []models.Pet

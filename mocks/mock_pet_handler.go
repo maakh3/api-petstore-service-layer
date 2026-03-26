@@ -76,6 +76,18 @@ func (mr *MockPetHandlerInterfaceMockRecorder) FindPetsByTags(w, r any) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindPetsByTags", reflect.TypeOf((*MockPetHandlerInterface)(nil).FindPetsByTags), w, r)
 }
 
+// GetById mocks base method.
+func (m *MockPetHandlerInterface) GetById(w http.ResponseWriter, r *http.Request) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "GetById", w, r)
+}
+
+// GetById indicates an expected call of GetById.
+func (mr *MockPetHandlerInterfaceMockRecorder) GetById(w, r any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetById", reflect.TypeOf((*MockPetHandlerInterface)(nil).GetById), w, r)
+}
+
 // UpdatePet mocks base method.
 func (m *MockPetHandlerInterface) UpdatePet(w http.ResponseWriter, r *http.Request) {
 	m.ctrl.T.Helper()
