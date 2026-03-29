@@ -1,0 +1,21 @@
+BEGIN;
+
+CREATE TABLE IF NOT EXISTS categories (
+    id BIGSERIAL PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE
+);
+CREATE TABLE IF NOT EXISTS tags (
+    id BIGSERIAL PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE
+);
+
+CREATE TABLE IF NOT EXISTS pets (
+    id BIGSERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    status TEXT NOT NULL,
+    category JSONB NOT NULL,
+    tags JSONB NOT NULL DEFAULT '[]'::jsonb,
+    photo_urls TEXT[] NOT NULL DEFAULT '{}'
+);
+
+COMMIT;
