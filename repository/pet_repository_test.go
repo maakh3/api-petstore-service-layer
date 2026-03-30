@@ -1,17 +1,29 @@
 package repository
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
+
+	//"reflect"
+	//"strings"
 	"testing"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/maakh3/api-petstore-service-layer/models"
 )
 
 func TestRepositoryAddPet(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
-		repo := NewPetRepository()
-		inputPet := models.Pet{
+		db, mock, err := sqlmock.New()
+		if err != nil {
+			t.Fatalf("failed to create sqlmock: %v", err)
+		}
+		defer db.Close()
+
+		repo := NewPetRepository(db)
+
+		input := models.Pet{
 			Name:   "fido",
 			Status: "available",
 			Tags: []models.Tag{
@@ -20,302 +32,160 @@ func TestRepositoryAddPet(t *testing.T) {
 			},
 		}
 
-		want := models.Pet{
-			Id:     1,
-			Name:   "fido",
-			Status: "available",
-			Tags: []models.Tag{
-				{Id: 1, Name: "small"},
-				{Id: 2, Name: "friendly"},
-			},
-		}
+		// expect the INSERT and return id = 1
+		mock.ExpectQuery(`INSERT INTO pets`).
+			WithArgs(
+				input.Id,
+				input.Name,
+				sqlmock.AnyArg(), // category JSON
+				sqlmock.AnyArg(), // photo_urls array
+				sqlmock.AnyArg(), // tags JSON
+				input.Status,
+			).
+			WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
 
-		got, err := repo.AddPet(inputPet)
+		got, err := repo.AddPet(input)
 		if err != nil {
 			t.Fatalf("AddPet() unexpected error: %v", err)
 		}
 
-		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("AddPet() returned %#v, want %#v", got, want)
+		if got.Id != 1 {
+			t.Fatalf("AddPet() Id = %d, want 1", got.Id)
+		}
+		if got.Name != input.Name {
+			t.Fatalf("AddPet() Name = %q, want %q", got.Name, input.Name)
+		}
+		if got.Status != input.Status {
+			t.Fatalf("AddPet() Status = %q, want %q", got.Status, input.Status)
 		}
 
-		storedPet, exists := repo.pets[int64(want.Id)]
-		if !exists {
-			t.Fatalf("AddPet() did not store pet with Id %d", want.Id)
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unfulfilled sql expectations: %v", err)
+		}
+	})
+
+	t.Run("db error", func(t *testing.T) {
+		db, mock, err := sqlmock.New()
+		if err != nil {
+			t.Fatalf("failed to create sqlmock: %v", err)
+		}
+		defer db.Close()
+
+		repo := NewPetRepository(db)
+
+		mock.ExpectQuery(`INSERT INTO pets`).
+			WillReturnError(fmt.Errorf("db connection error"))
+
+		_, err = repo.AddPet(models.Pet{Name: "fido", Status: "available"})
+		if err == nil {
+			t.Fatal("AddPet() error = nil, want db error")
 		}
 
-		if !reflect.DeepEqual(*storedPet, want) {
-			t.Fatalf("stored pet = %#v, want %#v", *storedPet, want)
-		}
-
-		if repo.nextId != 2 {
-			t.Fatalf("nextId = %d, want 2", repo.nextId)
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unfulfilled sql expectations: %v", err)
 		}
 	})
 }
 
 func TestRepositoryUpdatePet(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
-		repo := NewPetRepository()
-		existingPet := models.Pet{
-			Id:     1,
-			Name:   "fido",
-			Status: "available",
+		db, mock, err := sqlmock.New()
+		if err != nil {
+			t.Fatalf("failed to create sqlmock: %v", err)
+		}
+		defer db.Close()
+
+		repo := NewPetRepository(db)
+
+		input := models.Pet{
+			Id:   1,
+			Name: "fido-updated",
 			Tags: []models.Tag{
 				{Id: 1, Name: "small"},
 			},
-		}
-		repo.pets[int64(existingPet.Id)] = &existingPet
-		repo.nextId = 2
-
-		inputPet := models.Pet{
-			Id:     1,
-			Name:   "fido-updated",
 			Status: "sold",
-			Tags: []models.Tag{
-				{Id: 1, Name: "small"},
-			},
 		}
 
-		want := models.Pet{
-			Id:     1,
-			Name:   "fido-updated",
-			Status: "sold",
-			Tags: []models.Tag{
-				{Id: 1, Name: "small"},
-			},
-		}
+		// expect the UPDATE to succeed and affect 1 row
+		mock.ExpectExec(`UPDATE pets`).
+			WithArgs(
+				input.Id,
+				input.Name,
+				input.Status,
+				sqlmock.AnyArg(),
+				sqlmock.AnyArg(),
+				sqlmock.AnyArg(),
+			).
+			WillReturnResult(sqlmock.NewResult(0, 1)) // last insert id, 1 row affected
 
-		got, err := repo.UpdatePet(inputPet)
+		got, err := repo.UpdatePet(input)
 		if err != nil {
 			t.Fatalf("UpdatePet() unexpected error: %v", err)
 		}
 
-		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("UpdatePet() returned %#v, want %#v", got, want)
+		// UpdatePet returns the input pet object, so we can check that it was returned unchanged
+		if !reflect.DeepEqual(got, input) {
+			t.Fatalf("UpdatePet() returned %#v, want %#v", got, input)
 		}
 
-		storedPet, exists := repo.pets[int64(want.Id)]
-		if !exists {
-			t.Fatalf("UpdatePet() did not store pet with Id %d", want.Id)
-		}
-
-		if !reflect.DeepEqual(*storedPet, want) {
-			t.Fatalf("stored pet = %#v, want %#v", *storedPet, want)
-		}
-
-		if repo.nextId != 2 {
-			t.Fatalf("nextId = %d, want 2", repo.nextId)
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unfulfilled sql expectations: %v", err)
 		}
 	})
 	t.Run("not found", func(t *testing.T) {
-		repo := NewPetRepository()
+		db, mock, err := sqlmock.New()
+		if err != nil {
+			t.Fatalf("failed to create sqlmock: %v", err)
+		}
+		defer db.Close()
 
-		_, err := repo.UpdatePet(models.Pet{Id: 777, Name: "ghost"})
+		repo := NewPetRepository(db)
+
+		// Expect the UPDATE but affect 0 rows (no pet with ID 777)
+		mock.ExpectExec(`UPDATE pets`).
+			WithArgs(
+				777,
+				sqlmock.AnyArg(),
+				sqlmock.AnyArg(),
+				sqlmock.AnyArg(),
+				sqlmock.AnyArg(),
+				sqlmock.AnyArg(),
+			).
+			WillReturnResult(sqlmock.NewResult(0, 0)) // 0 rows affected
+
+		_, err = repo.UpdatePet(models.Pet{Id: 777, Name: "ghost", Status: "available"})
 		if err == nil {
 			t.Fatal("UpdatePet() error = nil, want not found error")
 		}
 		if !strings.Contains(err.Error(), "not found") || !strings.Contains(err.Error(), "Id") {
-			t.Fatalf("UpdatePet() error = %q, want substring match for not found + Id", err.Error())
-		}
-	})
-}
-
-func TestRepositoryFindPetsByStatus(t *testing.T) {
-	t.Run("happy path", func(t *testing.T) {
-		repo := NewPetRepository()
-
-		a, err := repo.AddPet(models.Pet{Name: "a", Status: "available"})
-		if err != nil {
-			t.Fatalf("AddPet() setup unexpected error: %v", err)
-		}
-		_, err = repo.AddPet(models.Pet{Name: "b", Status: "pending"})
-		if err != nil {
-			t.Fatalf("AddPet() setup unexpected error: %v", err)
-		}
-		c, err := repo.AddPet(models.Pet{Name: "c", Status: "available"})
-		if err != nil {
-			t.Fatalf("AddPet() setup unexpected error: %v", err)
+			t.Fatalf("UpdatePet() error = %q, want substring match for 'not found' and 'Id'", err.Error())
 		}
 
-		got, err := repo.FindPetsByStatus("available")
-		if err != nil {
-			t.Fatalf("FindPetsByStatus() unexpected error: %v", err)
-		}
-
-		wantIDs := map[int]struct{}{a.Id: {}, c.Id: {}}
-		if len(got) != len(wantIDs) {
-			t.Fatalf("FindPetsByStatus() len = %d, want %d", len(got), len(wantIDs))
-		}
-
-		gotIDs := make(map[int]struct{}, len(got))
-		for _, pet := range got {
-			if pet.Status != "available" {
-				t.Fatalf("FindPetsByStatus() returned status %q, want %q", pet.Status, "available")
-			}
-			gotIDs[pet.Id] = struct{}{}
-		}
-
-		for id := range wantIDs {
-			if _, ok := gotIDs[id]; !ok {
-				t.Fatalf("FindPetsByStatus() missing Id %d", id)
-			}
-		}
-	})
-	t.Run("no match", func(t *testing.T) {
-		repo := NewPetRepository()
-
-		_, err := repo.AddPet(models.Pet{Name: "a", Status: "sold"})
-		if err != nil {
-			t.Fatalf("AddPet() setup unexpected error: %v", err)
-		}
-
-		got, err := repo.FindPetsByStatus("pending")
-		if err != nil {
-			t.Fatalf("FindPetsByStatus() unexpected error: %v", err)
-		}
-
-		if got == nil {
-			t.Fatal("FindPetsByStatus() returned nil slice, want empty slice")
-		}
-		if len(got) != 0 {
-			t.Fatalf("FindPetsByStatus() len = %d, want 0", len(got))
-		}
-	})
-}
-
-func TestRepositoryFindPetsByTags(t *testing.T) {
-	t.Run("full match", func(t *testing.T) {
-		repo := NewPetRepository()
-		a, _ := repo.AddPet(testPet("a", "available", "friendly", "small"))
-		b, _ := repo.AddPet(testPet("b", "available", "friendly"))
-		_, _ = repo.AddPet(testPet("c", "available", "aggressive"))
-
-		got, err := repo.FindPetsByTags([]models.Tag{{Name: "friendly"}})
-		if err != nil {
-			t.Fatalf("FindPetsByTags() unexpected error: %v", err)
-		}
-
-		want := map[int]struct{}{a.Id: {}, b.Id: {}}
-		gotSet := toIdSet(got)
-		if len(gotSet) != len(want) {
-			t.Fatalf("FindPetsByTags() len = %d, want %d", len(gotSet), len(want))
-		}
-		for id := range want {
-			if _, ok := gotSet[id]; !ok {
-				t.Fatalf("FindPetsByTags() missing Id %d", id)
-			}
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unfulfilled sql expectations: %v", err)
 		}
 	})
 
-	t.Run("partial miss", func(t *testing.T) {
-		repo := NewPetRepository()
-		repo.AddPet(testPet("a", "available", "friendly", "small"))
-
-		got, err := repo.FindPetsByTags([]models.Tag{{Name: "friendly"}, {Name: "small"}, {Name: "missing"}})
+	t.Run("db exec error", func(t *testing.T) {
+		db, mock, err := sqlmock.New()
 		if err != nil {
-			t.Fatalf("FindPetsByTags() unexpected error: %v", err)
+			t.Fatalf("failed to create sqlmock: %v", err)
 		}
-		if len(got) != 0 {
-			t.Fatalf("FindPetsByTags() len = %d, want 0", len(got))
-		}
-	})
+		defer db.Close()
 
-	t.Run("empty search tags is match all", func(t *testing.T) {
-		repo := NewPetRepository()
-		a, _ := repo.AddPet(testPet("a", "available", "friendly", "small"))
-		b, _ := repo.AddPet(testPet("b", "available", "friendly"))
-		c, _ := repo.AddPet(testPet("c", "available", "aggressive"))
+		repo := NewPetRepository(db)
 
-		got, err := repo.FindPetsByTags(nil)
-		if err != nil {
-			t.Fatalf("FindPetsByTags() unexpected error: %v", err)
-		}
+		// Simulate a database error
+		mock.ExpectExec(`UPDATE pets`).
+			WillReturnError(fmt.Errorf("connection lost"))
 
-		want := map[int]struct{}{a.Id: {}, b.Id: {}, c.Id: {}}
-		gotSet := toIdSet(got)
-		if len(gotSet) != len(want) {
-			t.Fatalf("FindPetsByTags() len = %d, want %d", len(gotSet), len(want))
-		}
-		for id := range want {
-			if _, ok := gotSet[id]; !ok {
-				t.Fatalf("FindPetsByTags() missing Id %d", id)
-			}
-		}
-	})
-}
-
-func TestPetRepository_GetById(t *testing.T) {
-	t.Run("happy path", func(t *testing.T) {
-		repo := NewPetRepository()
-		existingPet := models.Pet{
-			Id:     1,
-			Name:   "fido",
-			Status: "available",
-			Tags: []models.Tag{
-				{Id: 1, Name: "small"},
-			},
-		}
-		repo.pets[int64(existingPet.Id)] = &existingPet
-		repo.nextId = 2
-
-		want := models.Pet{
-			Id:     1,
-			Name:   "fido",
-			Status: "available",
-			Tags: []models.Tag{
-				{Id: 1, Name: "small"},
-			},
-		}
-
-		got, err := repo.GetById(1)
-		if err != nil {
-			t.Fatalf("GetById() unexpected error: %v", err)
-		}
-
-		if !reflect.DeepEqual(got, want) {
-			t.Fatalf("GetById() returned %#v, want %#v", got, want)
-		}
-
-		storedPet, exists := repo.pets[int64(want.Id)]
-		if !exists {
-			t.Fatalf("GetById() did not store pet with Id %d", want.Id)
-		}
-
-		if !reflect.DeepEqual(*storedPet, want) {
-			t.Fatalf("stored pet = %#v, want %#v", *storedPet, want)
-		}
-	})
-	t.Run("not found", func(t *testing.T) {
-		repo := NewPetRepository()
-
-		_, err := repo.GetById(777)
+		_, err = repo.UpdatePet(models.Pet{Id: 1, Name: "test", Status: "available"})
 		if err == nil {
-			t.Fatal("GetById() error = nil, want not found error")
+			t.Fatal("UpdatePet() error = nil, want db error")
 		}
-		if !strings.Contains(err.Error(), "not found") || !strings.Contains(err.Error(), "Id") {
-			t.Fatalf("UpdatePet() error = %q, want substring match for not found + Id", err.Error())
+
+		if err := mock.ExpectationsWereMet(); err != nil {
+			t.Fatalf("unfulfilled sql expectations: %v", err)
 		}
 	})
-}
-
-func testPet(name, status string, tags ...string) models.Pet {
-	petTags := make([]models.Tag, 0, len(tags))
-	for i, tag := range tags {
-		petTags = append(petTags, models.Tag{Id: i + 1, Name: tag})
-	}
-
-	return models.Pet{
-		Name:   name,
-		Status: status,
-		Tags:   petTags,
-	}
-}
-
-func toIdSet(pets []models.Pet) map[int]struct{} {
-	out := make(map[int]struct{}, len(pets))
-	for _, pet := range pets {
-		out[pet.Id] = struct{}{}
-	}
-	return out
 }

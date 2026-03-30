@@ -1,113 +1,123 @@
 package repository
 
 import (
+	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log/slog"
-	"sync"
 
+	"github.com/lib/pq"
 	"github.com/maakh3/api-petstore-service-layer/models"
 )
 
 type PetRepository struct {
-	mu     sync.RWMutex // to handle concurrent access to the pets map
-	pets   map[int64]*models.Pet
-	nextId int64
+	db     *sql.DB
 	logger *slog.Logger
 }
 
-func NewPetRepository(logger ...*slog.Logger) *PetRepository {
+func NewPetRepository(db *sql.DB, logger ...*slog.Logger) *PetRepository {
 	selectedLogger := slog.Default()
 	if len(logger) > 0 && logger[0] != nil {
 		selectedLogger = logger[0]
 	}
 
 	return &PetRepository{
-		pets:   make(map[int64]*models.Pet),
-		nextId: 1,
+		db:     db,
 		logger: selectedLogger,
 	}
 }
 
 func (r *PetRepository) AddPet(pet models.Pet) (models.Pet, error) {
-	r.logger.Debug("repository add pet", "name", pet.Name, "status", pet.Status)
-	r.mu.Lock()         // pessimistically lock the mutex to ensure thread safety when modifying the pets map
-	defer r.mu.Unlock() // ensure the mutex is unlocked after the function returns
+	r.logger.Debug("repository add pet", "pet_id", pet.Id)
 
-	pet.Id = int(r.nextId)       // assign a new Id to the pet
-	r.pets[int64(pet.Id)] = &pet // store the pet in the map
-	r.nextId++                   // increment the nextId for the next pet
-	r.logger.Info("repository added pet", "pet_id", pet.Id)
+	categoryJson, err := json.Marshal(pet.Category)
+	if err != nil {
+		r.logger.Error("repository failed to marshal category", "error", err, "pet_id", pet.Id)
+		return models.Pet{}, fmt.Errorf("failed to marshal category: %w", err)
+	}
 
+	tagsJson, err := json.Marshal(pet.Tags)
+	if err != nil {
+		r.logger.Error("repository failed to marshal tags", "error", err, "pet_id", pet.Id)
+		return models.Pet{}, fmt.Errorf("failed to marshal tags: %w", err)
+	}
+
+	const q = `
+		INSERT INTO pets (id, name, category, photo_urls, tags, status)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		RETURNING id
+`
+	if err := r.db.QueryRow(
+		q,
+		pet.Id,
+		pet.Name,
+		categoryJson,
+		pq.Array(pet.PhotoUrls),
+		tagsJson,
+		pet.Status,
+	).Scan(&pet.Id); err != nil {
+		return models.Pet{}, fmt.Errorf("error adding pet: %w", err)
+	}
+
+	r.logger.Info("repository added pet", "pet_id", pet.Id, "status", pet.Status)
 	return pet, nil
 }
 
 func (r *PetRepository) UpdatePet(pet models.Pet) (models.Pet, error) {
-	r.logger.Debug("repository update pet", "pet_id", pet.Id)
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	existingPet, exists := r.pets[int64(pet.Id)]
-	if !exists {
-		r.logger.Info("repository pet not found during update", "pet_id", pet.Id)
-		return models.Pet{}, fmt.Errorf("pet with Id %d not found", pet.Id)
+	categoryJSON, err := json.Marshal(pet.Category)
+	if err != nil {
+		return models.Pet{}, fmt.Errorf("marshal category: %w", err)
+	}
+	tagsJSON, err := json.Marshal(pet.Tags)
+	if err != nil {
+		return models.Pet{}, fmt.Errorf("marshal tags: %w", err)
 	}
 
-	*existingPet = pet // update the existing pet with the new data
-	r.logger.Info("repository updated pet", "pet_id", pet.Id, "status", pet.Status)
-
-	return *existingPet, nil
+	const q = `
+		UPDATE pets
+		SET name = $2, status = $3, category = $4::jsonb, tags = $5::jsonb, photo_urls = $6
+		WHERE id = $1
+	`
+	res, err := r.db.Exec(q, pet.Id, pet.Name, pet.Status, categoryJSON, tagsJSON, pq.Array(pet.PhotoUrls))
+	if err != nil {
+		return models.Pet{}, fmt.Errorf("update pet: %w", err)
+	}
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return models.Pet{}, fmt.Errorf("rows affected: %w", err)
+	}
+	if rows == 0 {
+		return models.Pet{}, fmt.Errorf("pet with Id %d not found", pet.Id)
+	}
+	return pet, nil
 }
 
 func (r *PetRepository) FindPetsByStatus(status string) ([]models.Pet, error) {
-	r.logger.Debug("repository find pets by status", "status", status)
-	r.mu.RLock() // use read lock for concurrent reads
-	defer r.mu.RUnlock()
-
-	pets := make([]models.Pet, 0)
-	for _, pet := range r.pets {
-		if pet.Status == status {
-			pets = append(pets, *pet)
-		}
-	}
-	r.logger.Info("repository found pets by status", "status", status, "count", len(pets))
-	return pets, nil
+	//TODO implement me
+	panic("implement me")
 }
 
 func (r *PetRepository) FindPetsByTags(tags []models.Tag) ([]models.Pet, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	var pets = make([]models.Pet, 0)
-	for _, pet := range r.pets {
-		if containsAllTags(pet.Tags, tags) {
-			pets = append(pets, *pet)
-		}
-	}
-	return pets, nil
+	//TODO implement me
+	panic("implement me")
 }
 
 func (r *PetRepository) GetById(id int64) (models.Pet, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	pet, exists := r.pets[id]
-	if !exists {
-		return models.Pet{}, fmt.Errorf("pet with Id %d not found", id)
-	}
-	return *pet, nil
+	//TODO implement me
+	panic("implement me")
 }
 
-// helper function to check if one pet's tags contain all the specified tags
-func containsAllTags(petTags []models.Tag, searchTags []models.Tag) bool {
-	tagSet := make(map[string]struct{}) // create a set of the pet's tags for efficient lookup
-	for _, tag := range petTags {       // iterate over the pet's tags and add them to the set
-		tagSet[tag.Name] = struct{}{} // the value doesn't matter, we just care about the keys for existence checks
-	}
+func (r *PetRepository) UpdatePetByForm(id int64, name *string, status *string) (models.Pet, error) {
+	//TODO implement me
+	panic("implement me")
+}
 
-	for _, searchTag := range searchTags { // iterate over the search tags and check if each one exists in the pet's tag set
-		if _, exists := tagSet[searchTag.Name]; !exists { // if any search tag is not found in the pet's tags, end the search
-			return false
-		}
-	}
-	return true
+func (r *PetRepository) UploadImage(id int64, imageData []byte) (models.Pet, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (r *PetRepository) DeletePet(id int64) error {
+	//TODO implement me
+	panic("implement me")
 }
