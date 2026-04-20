@@ -86,7 +86,7 @@ func (mr *MockPetServiceInterfaceMockRecorder) FindPetsByTags(tags any) *gomock.
 }
 
 // GetById mocks base method.
-func (m *MockPetServiceInterface) GetById(id int) (models.Pet, error) {
+func (m *MockPetServiceInterface) GetPetById(id int) (models.Pet, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetById", id)
 	ret0, _ := ret[0].(models.Pet)
@@ -97,7 +97,7 @@ func (m *MockPetServiceInterface) GetById(id int) (models.Pet, error) {
 // GetById indicates an expected call of GetById.
 func (mr *MockPetServiceInterfaceMockRecorder) GetById(id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetById", reflect.TypeOf((*MockPetServiceInterface)(nil).GetById), id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetById", reflect.TypeOf((*MockPetServiceInterface)(nil).GetPetById), id)
 }
 
 // UpdatePet mocks base method.

@@ -227,7 +227,7 @@ func TestPetService_GetById(t *testing.T) {
 
 		service := NewPetService(mockRepo)
 
-		got, err := service.GetById(3)
+		got, err := service.GetPetById(3)
 		if err != nil {
 			t.Fatalf("GetById() unexpected error: %v", err)
 		}
@@ -248,12 +248,124 @@ func TestPetService_GetById(t *testing.T) {
 		mockRepo.EXPECT().GetById(int64(999)).Return(models.Pet{}, fmt.Errorf("pet with Id 999 not found"))
 
 		service := NewPetService(mockRepo)
-		_, err := service.GetById(999)
+		_, err := service.GetPetById(999)
 		if err == nil {
 			t.Fatalf("GetById() error = nil, want ErrPetNotFound")
 		}
 		if !errors.Is(err, ErrPetNotFound) {
 			t.Fatalf("GetById() error = %v, want = %v", err, ErrPetNotFound)
+		}
+	})
+}
+
+func TestPetService_DeletePet(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		mockRepo := mocks.NewMockPetRepositoryInterface(ctrl)
+
+		mockRepo.EXPECT().DeletePet(int64(3)).Return(nil)
+
+		service := NewPetService(mockRepo)
+		err := service.DeletePet(3)
+		if err != nil {
+			t.Fatalf("DeletePet() unexpected error: %v", err)
+		}
+	})
+	t.Run("not found", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		mockRepo := mocks.NewMockPetRepositoryInterface(ctrl)
+
+		mockRepo.EXPECT().DeletePet(int64(999)).Return(fmt.Errorf("pet with Id 999 not found"))
+
+		service := NewPetService(mockRepo)
+		err := service.DeletePet(999)
+		if err == nil {
+			t.Fatalf("DeletePet() error = nil, want ErrPetNotFound")
+		}
+		if !errors.Is(err, ErrPetNotFound) {
+			t.Fatalf("DeletePet() error = %v, want %v", err, ErrPetNotFound)
+		}
+	})
+}
+
+func TestPetService_UpdatePetByForm(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		mockRepo := mocks.NewMockPetRepositoryInterface(ctrl)
+
+		inputId := int64(3)
+		inputName := "fido-updated"
+		inputStatus := "sold"
+		want := models.Pet{Id: 3, Name: "fido-updated", Status: "sold"}
+		mockRepo.EXPECT().UpdatePetByForm(inputId, &inputName, &inputStatus).Return(want, nil)
+
+		service := NewPetService(mockRepo)
+		got, err := service.UpdatePetByForm(3, "fido-updated", "sold")
+		if err != nil {
+			t.Fatalf("UpdatePetByForm() unexpected error: %v", err)
+		}
+
+		if got.Id != want.Id {
+			t.Fatalf("UpdatePetByForm() Id = %d, want %d", got.Id, want.Id)
+		}
+		if got.Name != "fido-updated" {
+			t.Fatalf("UpdatePetByForm() Name = %q, want %q", got.Name, "fido-updated")
+		}
+		if got.Status != "sold" {
+			t.Fatalf("UpdatePetByForm() Status = %q, want %q", got.Status, "sold")
+		}
+	})
+	t.Run("not found", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		mockRepo := mocks.NewMockPetRepositoryInterface(ctrl)
+
+		inputId := int64(999)
+		inputName := "ghost"
+		inputStatus := "available"
+		mockRepo.EXPECT().UpdatePetByForm(inputId, &inputName, &inputStatus).Return(models.Pet{}, fmt.Errorf("pet with Id 999 not found"))
+
+		service := NewPetService(mockRepo)
+		_, err := service.UpdatePetByForm(999, "ghost", "available")
+		if err == nil {
+			t.Fatalf("UpdatePetByForm() error = nil, want ErrPetNotFound")
+		}
+		if !errors.Is(err, ErrPetNotFound) {
+			t.Fatalf("UpdatePetByForm() error = %v, want %v", err, ErrPetNotFound)
+		}
+	})
+}
+
+func TestPetService_UploadImage(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		mockRepo := mocks.NewMockPetRepositoryInterface(ctrl)
+
+		inputId := int64(3)
+		inputImageUrl := "http://example.com/image.jpg"
+		want := models.Pet{Id: 3, Name: "fido", Status: "available", PhotoUrls: []string{inputImageUrl}}
+		mockRepo.EXPECT().UploadImage(inputId, inputImageUrl).Return(want, nil)
+
+		service := NewPetService(mockRepo)
+		err := service.UploadImage(3, "http://example.com/image.jpg")
+		if err != nil {
+			t.Fatalf("UploadImage() unexpected error: %v", err)
+		}
+	})
+	t.Run("not found", func(t *testing.T) {
+		ctrl := gomock.NewController(t)
+		mockRepo := mocks.NewMockPetRepositoryInterface(ctrl)
+
+		inputId := int64(999)
+		inputImageUrl := "http://example.com/image.jpg"
+		mockRepo.EXPECT().UploadImage(inputId, inputImageUrl).Return(models.Pet{}, fmt.Errorf("pet with Id 999 not found"))
+
+		service := NewPetService(mockRepo)
+		err := service.UploadImage(999, "http://example.com/image.jpg")
+		if err == nil {
+			t.Fatalf("UploadImage() error = nil, want ErrPetNotFound")
+		}
+		if !errors.Is(err, ErrPetNotFound) {
+			t.Fatalf("UploadImage() error = %v, want %v", err, ErrPetNotFound)
 		}
 	})
 }

@@ -55,6 +55,20 @@ func (mr *MockPetRepositoryInterfaceMockRecorder) AddPet(pet any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddPet", reflect.TypeOf((*MockPetRepositoryInterface)(nil).AddPet), pet)
 }
 
+// DeletePet mocks base method.
+func (m *MockPetRepositoryInterface) DeletePet(id int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeletePet", id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeletePet indicates an expected call of DeletePet.
+func (mr *MockPetRepositoryInterfaceMockRecorder) DeletePet(id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePet", reflect.TypeOf((*MockPetRepositoryInterface)(nil).DeletePet), id)
+}
+
 // FindPetsByStatus mocks base method.
 func (m *MockPetRepositoryInterface) FindPetsByStatus(status string) ([]models.Pet, error) {
 	m.ctrl.T.Helper()
@@ -113,4 +127,34 @@ func (m *MockPetRepositoryInterface) UpdatePet(pet models.Pet) (models.Pet, erro
 func (mr *MockPetRepositoryInterfaceMockRecorder) UpdatePet(pet any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePet", reflect.TypeOf((*MockPetRepositoryInterface)(nil).UpdatePet), pet)
+}
+
+// UpdatePetByForm mocks base method.
+func (m *MockPetRepositoryInterface) UpdatePetByForm(id int64, name, status *string) (models.Pet, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdatePetByForm", id, name, status)
+	ret0, _ := ret[0].(models.Pet)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdatePetByForm indicates an expected call of UpdatePetByForm.
+func (mr *MockPetRepositoryInterfaceMockRecorder) UpdatePetByForm(id, name, status any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePetByForm", reflect.TypeOf((*MockPetRepositoryInterface)(nil).UpdatePetByForm), id, name, status)
+}
+
+// UploadImage mocks base method.
+func (m *MockPetRepositoryInterface) UploadImage(id int64, imageUrl string) (models.Pet, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UploadImage", id, imageUrl)
+	ret0, _ := ret[0].(models.Pet)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UploadImage indicates an expected call of UploadImage.
+func (mr *MockPetRepositoryInterfaceMockRecorder) UploadImage(id, imageUrl any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UploadImage", reflect.TypeOf((*MockPetRepositoryInterface)(nil).UploadImage), id, imageUrl)
 }

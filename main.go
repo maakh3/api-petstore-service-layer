@@ -33,6 +33,18 @@ func main() {
 	mux.HandleFunc("GET /pet/findByStatus", petHandler.FindPetsByStatus)
 	mux.HandleFunc("GET /pet/findByTags", petHandler.FindPetsByTags)
 	mux.HandleFunc("GET /pet/{petId}", petHandler.GetById)
+	mux.HandleFunc("POST /pet/{petId}", petHandler.UpdatePetByForm)
+	mux.HandleFunc("DELETE /pet/{petId}", petHandler.DeletePet)
+	mux.HandleFunc("POST /pet/{petId}/uploadImage", petHandler.UploadImage)
+
+	//storeRepo := repository.NewStoreRepository()
+	//storeService := services.NewStoreService(storeRepo)
+	//storeHandler := handlers.NewStoreHandler(storeService)
+
+	// mux.HandleFunc("GET /store/inventory", storeHandler.GetStoreInventory)
+	// mux.HandleFunc("POST /store/order", storeHandler.CreateNewOrder)
+	// mux.HandleFunc("GET /store/order/{storeId}", storeHandler.GetOrderById)
+	// mux.HandleFunc("DELETE /store/order/{storeId}", storeHandler.DeleteOrder)
 
 	logger.Info("api-petstore-service-layer is up and running", "port", 8080)
 	if err := http.ListenAndServe(":8080", mux); err != nil {

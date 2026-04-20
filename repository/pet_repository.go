@@ -112,7 +112,7 @@ func (r *PetRepository) UpdatePetByForm(id int64, name *string, status *string) 
 	panic("implement me")
 }
 
-func (r *PetRepository) UploadImage(id int64, imageData []byte) (models.Pet, error) {
+func (r *PetRepository) UploadImage(id int64, imageUrl string) (models.Pet, error) {
 	//TODO implement me
 	panic("implement me")
 }
