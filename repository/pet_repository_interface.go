@@ -11,4 +11,7 @@ type PetRepositoryInterface interface {
 	FindPetsByStatus(status string) ([]models.Pet, error)
 	FindPetsByTags(tags []models.Tag) ([]models.Pet, error)
 	GetById(id int64) (models.Pet, error)
+	UpdatePetByForm(id int64, name *string, status *string) (models.Pet, error)
+	UploadImage(id int64, imageUrl string) (models.Pet, error)
+	DeletePet(id int64) error
 }

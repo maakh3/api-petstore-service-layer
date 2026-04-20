@@ -75,7 +75,7 @@ func (s *PetService) FindPetsByTags(tags []models.Tag) ([]models.Pet, error) {
 	return pets, nil
 }
 
-func (s *PetService) GetById(id int) (models.Pet, error) {
+func (s *PetService) GetPetById(id int) (models.Pet, error) {
 	s.logger.Debug("service get by id", "pet_id", id)
 	updated, err := s.repo.GetById(int64(id))
 	if err != nil {
@@ -85,4 +85,40 @@ func (s *PetService) GetById(id int) (models.Pet, error) {
 
 	s.logger.Info("service get by id", "pet_id", updated.Id, "status", updated.Status)
 	return updated, nil
+}
+
+func (s *PetService) DeletePet(id int) error {
+	s.logger.Debug("service delete pet", "pet_id", id)
+	err := s.repo.DeletePet(int64(id))
+	if err != nil {
+		s.logger.Info("service pet not found during delete", "pet_id", id)
+		return ErrPetNotFound
+	}
+
+	s.logger.Info("service deleted pet", "pet_id", id)
+	return nil
+}
+
+func (s *PetService) UpdatePetByForm(id int, name string, status string) (models.Pet, error) {
+	s.logger.Debug("service update pet by form", "pet_id", id)
+	updated, err := s.repo.UpdatePetByForm(int64(id), &name, &status)
+	if err != nil {
+		s.logger.Info("service pet not found during update by form", "pet_id", id)
+		return models.Pet{}, ErrPetNotFound
+	}
+
+	s.logger.Info("service updated pet by form", "pet_id", updated.Id, "status", updated.Status)
+	return updated, nil
+}
+
+func (s *PetService) UploadImage(petId int, imageUrl string) error {
+	s.logger.Debug("service upload image", "pet_id", petId)
+	_, err := s.repo.UploadImage(int64(petId), imageUrl)
+	if err != nil {
+		s.logger.Info("service pet not found during upload image", "pet_id", petId)
+		return ErrPetNotFound
+	}
+
+	s.logger.Info("service uploaded image for pet", "pet_id", petId)
+	return nil
 }
